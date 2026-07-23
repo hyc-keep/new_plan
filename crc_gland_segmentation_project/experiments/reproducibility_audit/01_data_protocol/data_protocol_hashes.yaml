@@ -1,0 +1,14 @@
+stage: 01_DataProtocol
+status: PASS
+git_commit: 43fcf59
+train68_count: 68
+val17_count: 17
+testA60_count: 60
+testB20_count: 20
+asset_file_count: 330
+data_config_sha256: 833b8628ad9135318f60b636931707eeaea761cd785df88f18c8b767d921d1bc
+split_manifest_sha256: 77503f51331d3ae89b4640543ee28635e915a1c4fc1a46a38744007fbdd3eff7
+asset_manifest_sha256: 320c7d1158e6a228ff14136bcc58133e14cd8f44d6a9e678e77eb848b9fa8f83
+dataset_files_sha256: 13baa6646f8099d62736b8d823df7bdacef7cba57645999a0135d8f1d04e06ac
+image_mode: RGB
+mask_mode: L

@@ -1,0 +1,10 @@
+name: ResNet34UNet
+model_name: resnet34_unet_boundary
+model_version: boundary_v1
+in_channels: 3
+out_channels: 1
+encoder_pretrained: true
+use_boundary_head: true
+boundary_width: 3
+boundary_loss_type: BCE
+lambda_boundary: 0.3

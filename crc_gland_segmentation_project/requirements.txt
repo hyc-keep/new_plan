@@ -1,0 +1,7 @@
+# stage02 (02_UNet流程验证) 运行环境依赖快照
+# 记录于 objdice 口径对齐重跑时的真实环境 (featurize GPU 服务器, python 3.11)
+torch==2.2.2
+numpy==1.26.4
+scipy==1.17.1
+pillow==10.3.0
+pyyaml

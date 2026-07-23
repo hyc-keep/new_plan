@@ -1,0 +1,57 @@
+stage: D2_Distance
+stage_name: 07_Distance
+dataset: glas
+model: resnet34_unet_distance
+eval_proto_version: eval_proto_v1
+splits:
+  - train68
+  - val17
+  - TestA60
+  - TestB20
+sample_count:
+  train68: 68
+  val17: 17
+  TestA60: 60
+  TestB20: 20
+metric_set:
+  - F1
+  - Object Dice
+  - Object Hausdorff
+  - Dice
+  - IoU
+  - HD95
+  - Boundary F1
+raw_schema: sample_only
+aggregate_policy: per_seed_then_mean_std
+lineage:
+  source_stage: B1
+  source_manifest: reports/tables/baseline_stage_manifest.csv
+  source_protocol_version: eval_proto_v1
+  source_run_name: B1_ResNet34_UNet_GlaS_seed3407
+  consumer_stage: 07_Distance
+  consumer_file: configs/experiment/D2_R34UNet_Distance_GlaS_seed3407.yaml
+  consumption_boundary: boundary_input_base
+runs:
+  - run_name: D2_R34UNet_Distance_GlaS_seed3407
+    seed: 3407
+    config: configs/experiment/D2_R34UNet_Distance_GlaS_seed3407.yaml
+    output_dir: experiments/D2_R34UNet_Distance_GlaS_seed3407
+required_paths:
+  - name: source_manifest
+    path: reports/tables/baseline_stage_manifest.csv
+  - name: model_config
+    path: configs/model/resnet34_unet_distance.yaml
+  - name: experiment_config
+    path: configs/experiment/D2_R34UNet_Distance_GlaS_seed3407.yaml
+  - name: eval_config
+    path: configs/eval/eval_proto_v1.yaml
+pretrained_weight:
+  source: torchvision_resnet34_imagenet1k_v1
+  torchvision_version: 0.17.2+cu121
+  cache_path: /home/featurize/.cache/torch/hub/checkpoints/resnet34-b627a593.pth
+  sha256: b627a593bcbe140c234610266fe4f8ae95ea42fc881d091c9b6052e6b1d0590f
+  offline_policy: use_local_cache_only
+freshness:
+  current_round: D2_Distance_seed3407_screening
+  historical_exclusion: B1_C1_D1_read_only
+  required_before_run: research_alignment_stage_lock_precheck_stage_contract_runtime_code_quality

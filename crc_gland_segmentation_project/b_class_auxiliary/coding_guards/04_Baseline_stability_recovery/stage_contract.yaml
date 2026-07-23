@@ -1,0 +1,94 @@
+stage: 04_Baseline
+dataset: glas
+model: paired_a2_unet_b1_resnet34_unet
+eval_proto_version: eval_proto_v1
+protocol_version: train_proto_v2
+config_version: baseline_stability_v2_lr
+
+runs:
+  - run_name: A2_UNet_GlaS_seed3407
+    seed: 3407
+    config: configs/experiment/A2_UNet_GlaS_seed3407.yaml
+    output_dir: experiments/A2_UNet_GlaS_seed3407
+  - run_name: A2_UNet_GlaS_seed1234
+    seed: 1234
+    config: configs/experiment/A2_UNet_GlaS_seed1234.yaml
+    output_dir: experiments/A2_UNet_GlaS_seed1234
+  - run_name: A2_UNet_GlaS_seed2025
+    seed: 2025
+    config: configs/experiment/A2_UNet_GlaS_seed2025.yaml
+    output_dir: experiments/A2_UNet_GlaS_seed2025
+  - run_name: B1_ResNet34_UNet_GlaS_seed3407
+    seed: 3407
+    config: configs/experiment/B1_ResNet34_UNet_GlaS_seed3407.yaml
+    output_dir: experiments/B1_ResNet34_UNet_GlaS_seed3407
+  - run_name: B1_ResNet34_UNet_GlaS_seed1234
+    seed: 1234
+    config: configs/experiment/B1_ResNet34_UNet_GlaS_seed1234.yaml
+    output_dir: experiments/B1_ResNet34_UNet_GlaS_seed1234
+  - run_name: B1_ResNet34_UNet_GlaS_seed2025
+    seed: 2025
+    config: configs/experiment/B1_ResNet34_UNet_GlaS_seed2025.yaml
+    output_dir: experiments/B1_ResNet34_UNet_GlaS_seed2025
+
+splits:
+  train: 68
+  val: 17
+  testA: 60
+  testB: 20
+sample_count:
+  raw_per_seed: 42
+  meanstd_rows: 14
+metric_set: [dice, iou, objdice, objf1, hausdorff, hd95, boundary_f1]
+raw_schema:
+  semantic: sample_only
+  aggregate_rows_in_raw: false
+  required_fields: [stage, run_name, seed, split, sample_id, metric_name, metric_value]
+aggregate_policy:
+  semantic: independent_derived_statistics
+  meanstd_rows: 14
+  ddof: 0
+  split_separation: [TestA, TestB]
+
+lineage:
+  source_stage: 03_UNet稳定性
+  source_manifest: reports/tables/unet_stage_manifest.csv
+  source_protocol_version: eval_proto_v1
+  source_run_name: A2_UNet_GlaS_seed3407,A2_UNet_GlaS_seed1234,A2_UNet_GlaS_seed2025
+  consumer_stage: 04_Baseline
+  consumer_file: 结直肠腺体分割_plan_优化版/01_实验执行/04_Baseline/04_阶段验收.md
+  consumption_boundary: A2 stable identity paired control for B1 stable identity; all prior 04 artifacts excluded
+
+required_paths:
+  - name: research_gate
+    path: b_class_auxiliary/runtime_checks/04_Baseline_research_alignment_gate_report.md
+  - name: stage_definition_gate
+    path: b_class_auxiliary/coding_guards/04_Baseline_stability_recovery/stage_definition_gate_report.md
+  - name: precheck_gate
+    path: b_class_auxiliary/coding_guards/04_Baseline_stability_recovery/precheck_doc_gate_report.md
+  - name: source_manifest
+    path: reports/tables/unet_stage_manifest.csv
+  - name: eval_config
+    path: configs/eval/eval_proto_v1.yaml
+  - name: data_config
+    path: configs/data/glas.yaml
+  - name: model_a2_config
+    path: configs/model/unet_v1.yaml
+  - name: model_b1_config
+    path: configs/model/resnet34_unet.yaml
+  - name: train_config
+    path: configs/train/unet_flow_v2.yaml
+  - name: implementation_basis
+    path: reports/stage_reports/implementation_tracking/04_Baseline_stability_recovery/实现依据记录.md
+
+pretrained_weight:
+  source: torchvision ResNet34 IMAGENET1K_V1
+  torchvision_version: 0.17.2+cu121
+  cache_path: /home/featurize/.cache/torch/hub/checkpoints/resnet34-b627a593.pth
+  sha256: b627a593bcbe140c234610266fe4f8ae95ea42fc881d091c9b6052e6b1d0590f
+  offline_policy: load_from_verified_local_cache_without_network
+
+freshness:
+  current_round: baseline_stability_v2_lr_stable_identity_reset
+  historical_exclusion: experiments/_historical_archive;experiments/*__smoke;experiments/*__runtime_probe
+  required_before_run: freeze current code/config/manifest/contract; run isolated runtime and smoke; formal outputs must be fresh and independently checked

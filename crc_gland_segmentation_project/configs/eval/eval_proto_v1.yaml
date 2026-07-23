@@ -1,0 +1,11 @@
+eval_proto_version: eval_proto_v1
+best_selector: val_objdice_max  # protocol doc: metric for best checkpoint; consumed by trainer.py
+best_metric_name: val_objdice   # protocol doc: metric name alias; consumed by trainer.py as hardcoded string
+threshold_value: 0.5
+threshold_source: val17
+eval_cast_policy: float32_before_threshold  # protocol doc: cast policy enforced via manual .float() in threshold path
+postprocess_version: none_in_v1
+boundary_metric_width: 3
+boundary_metric_impl: binary_erosion_xor_plus_binary_dilation
+connected_components_impl: scipy.ndimage.label
+connected_components_connectivity: 8

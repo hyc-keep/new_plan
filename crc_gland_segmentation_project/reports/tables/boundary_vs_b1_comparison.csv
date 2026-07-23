@@ -1,0 +1,15 @@
+split_role,metric_name,b1_mean,boundary_mean,delta,direction,decision_signal
+TestA,F1,0.749783,0.772056,+0.022273,higher_better,positive
+TestA,Object Dice,0.835853,0.837720,+0.001867,higher_better,weak_positive
+TestA,Object Hausdorff,67.331024,69.381167,+2.050143,lower_better,negative
+TestA,Dice,0.916890,0.920440,+0.003550,higher_better,positive
+TestA,IoU,0.853529,0.858161,+0.004631,higher_better,positive
+TestA,HD95,33.353000,33.030353,-0.322647,lower_better,positive
+TestA,Boundary F1,0.761593,0.765863,+0.004270,higher_better,positive
+TestB,F1,0.672565,0.713646,+0.041081,higher_better,positive
+TestB,Object Dice,0.822468,0.835298,+0.012829,higher_better,positive
+TestB,Object Hausdorff,97.696140,94.929406,-2.766733,lower_better,positive
+TestB,Dice,0.913559,0.920481,+0.006922,higher_better,positive
+TestB,IoU,0.849994,0.860241,+0.010247,higher_better,positive
+TestB,HD95,25.699712,27.309900,+1.610187,lower_better,negative
+TestB,Boundary F1,0.708971,0.714011,+0.005040,higher_better,positive

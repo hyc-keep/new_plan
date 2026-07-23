@@ -1,0 +1,3 @@
+model_name,variant,params_total,params_m,params_delta,params_delta_percent,flops_g,latency_ms,measurement_status,source
+resnet34_unet,baseline,false,24436241,24.436241,0,0,not_measured,not_applicable,src/models/resnet34_unet.py
+resnet34_unet_boundary,decoder_final_boundary_head,true,24438578,24.438578,2337,0.009563,not_measured,parameter_count_measured_only,src/models/boundary_head.py

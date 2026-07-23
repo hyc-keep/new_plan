@@ -1,0 +1,27 @@
+[Code Syntax]
+- py_compile: pass
+- import_check: pass
+
+[Config Check]
+- yaml_valid: pass
+- path_exists: pass
+- stage_boundary_pass: pass
+
+[Runtime Check]
+- smoke_run_pass: pass
+- dataloader_batch_check_pass: pass
+- tensor_shape_dtype_pass: pass
+- loss_finite_pass: pass
+- grad_step_pass: pass
+
+[Protocol Check]
+- implementation_record_complete: pass
+- precheck_doc_gate_pass: pass
+- runtime_probe_isolated: pass
+- code_quality_gate_pass: pass
+- formal_training_complete: pass
+- independent_metric_check: pass
+
+[Conclusion]
+- diagnostics_result: partial
+- note: C1 formal runs and independent prediction/GT metric checks are complete; C1 workflow gate remains a separate closeout step.

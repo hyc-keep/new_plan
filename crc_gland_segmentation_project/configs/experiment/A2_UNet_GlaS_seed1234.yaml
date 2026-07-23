@@ -1,0 +1,17 @@
+run_name: A2_UNet_GlaS_seed1234
+stage_code: A2
+stage: 04_Baseline
+dataset_code: glas
+model_name: unet
+model_version: unet_v1
+config_version: original_protocol_reproduction
+train_proto_version: train_proto_v1
+train_seed: 1234
+result_tag: fresh_original_protocol_reproduction
+aggregation: single_seed
+smoke_check_run_name: A2_UNet_GlaS_seed1234__smoke
+config_refs:
+  data: configs/data/glas.yaml
+  model: configs/model/unet_v1.yaml
+  train: configs/train/unet_flow_v1.yaml
+  eval: configs/eval/eval_proto_v1.yaml

@@ -1,0 +1,94 @@
+# Paper project repository boundary
+# Keep code, plans, protocols, references notes, configs and lightweight metadata.
+# Exclude datasets, local environments and generated/heavy experiment assets.
+
+# Operating system / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.trae/
+**/.trae/
+
+# Python / local environments
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+.conda/
+.env
+
+# Raw datasets and local data copies
+datasets/
+crc_gland_segmentation_project/datasets/
+**/data_raw/
+**/raw_data/
+
+# Large local reference corpora and extracted PDF caches
+结直肠腺体分割_pdf库/
+结直肠腺体分割_正式参考资料/
+**/_pdf_extract/
+**/pdf_extract/
+**/extract_cache/
+**/*_tmp_fulltext_archive/
+**/_tmp*/
+**/90_历史归档*/
+**/旧文献索引与审计/
+**/旧项目命名文档_2026-06-15/
+**/plan根目录旧抽取缓存/
+
+# Historical project/planning snapshots
+**/_historical_archive/
+**/_historical_original_route/
+
+# Generated experiment artifacts: keep lightweight CSV/YAML/MD summaries only
+**/checkpoints/
+**/*.ckpt
+**/visuals/
+**/predictions/
+**/eval_assets/
+**/tensorboard/
+**/*.log
+**/*.stderr
+**/*.stdout
+**/*.pid
+**/*.pid.txt
+**/*.npy
+**/*.npz
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.bmp
+crc_gland_segmentation_project/reports/data_checks/manual_audit_visual_review.ipynb
+
+# Generated caches, archives and temporary exports
+**/.run.lock
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.gz
+*.rar
+crc_gland_segmentation_project/experiments/_historical_archive/
+crc_gland_segmentation_project/**/_historical_archive/
+crc_gland_segmentation_project/**/runtime_check.log
+_archive_pre_skill_restart_20260703/
+_root_cleanup_archived_duplicates/
+
+# Local journals / runtime-only workspace exports
+crc_gland_segmentation_project_journal/
+save记录/
+乱/
+
+# Do not ignore these lightweight project assets:
+# - *.md, *.yaml, *.yml, *.csv, *.py
+# - plans, paper notes, parameter/protocol evidence and source code
+# - run_meta.yaml, train_log.csv, val_metrics.csv, testA_metrics.csv,
+#   testB_metrics.csv and metric_crosscheck_note.md
+# - reproducibility audit reports and experiment summaries

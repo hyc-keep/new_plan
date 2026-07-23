@@ -1,0 +1,12 @@
+name: ResNet34UNet
+model_name: resnet34_unet_lkma
+model_version: C1_LKMA_v1
+in_channels: 3
+out_channels: 1
+encoder_pretrained: true
+use_lkma: true
+lkma_insert_position: bottleneck
+lkma_kernel_size: 15
+lkma_use_pwconv: true
+lkma_use_residual: true
+arch_source: resnet34_encoder_unet_decoder_skip_plus_lkma_bottleneck

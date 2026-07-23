@@ -1,0 +1,11 @@
+name: ResNet34UNet
+model_name: resnet34_unet_distance
+model_version: distance_v1
+in_channels: 3
+out_channels: 1
+encoder_pretrained: true
+use_boundary_head: false
+use_distance_head: true
+distance_target_version: EDT_norm01_v1
+distance_loss: SmoothL1
+lambda_dist: 0.1

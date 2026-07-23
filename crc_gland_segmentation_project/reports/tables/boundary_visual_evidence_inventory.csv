@@ -1,0 +1,7 @@
+run_name,split_role,visual_asset_count,asset_pattern,visual_support_level,manual_case_label_status,source_dir
+D1_R34UNet_Boundary_GlaS_seed3407,testA,20,5 cases x raw/gt/pred/overlay,available,not_manually_labeled,experiments/D1_R34UNet_Boundary_GlaS_seed3407/visuals/testA
+D1_R34UNet_Boundary_GlaS_seed3407,testB,20,5 cases x raw/gt/pred/overlay,available,not_manually_labeled,experiments/D1_R34UNet_Boundary_GlaS_seed3407/visuals/testB
+D1_R34UNet_Boundary_GlaS_seed1234,testA,20,5 cases x raw/gt/pred/overlay,available,not_manually_labeled,experiments/D1_R34UNet_Boundary_GlaS_seed1234/visuals/testA
+D1_R34UNet_Boundary_GlaS_seed1234,testB,20,5 cases x raw/gt/pred/overlay,available,not_manually_labeled,experiments/D1_R34UNet_Boundary_GlaS_seed1234/visuals/testB
+D1_R34UNet_Boundary_GlaS_seed2025,testA,20,5 cases x raw/gt/pred/overlay,available,not_manually_labeled,experiments/D1_R34UNet_Boundary_GlaS_seed2025/visuals/testA
+D1_R34UNet_Boundary_GlaS_seed2025,testB,20,5 cases x raw/gt/pred/overlay,available,not_manually_labeled,experiments/D1_R34UNet_Boundary_GlaS_seed2025/visuals/testB

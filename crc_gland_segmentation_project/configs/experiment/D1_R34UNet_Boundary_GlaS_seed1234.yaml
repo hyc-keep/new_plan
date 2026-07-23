@@ -1,0 +1,33 @@
+run_name: D1_R34UNet_Boundary_GlaS_seed1234
+stage_code: D1_Boundary
+stage_name: 06_Boundary
+source_stage: B1
+source_manifest: reports/tables/baseline_stage_manifest.csv
+source_protocol_version: eval_proto_v1
+source_run_name: B1_ResNet34_UNet_GlaS_seed1234
+consumer_stage: 06_Boundary
+consumer_file: configs/experiment/D1_R34UNet_Boundary_GlaS_seed1234.yaml
+consumption_boundary: frozen_baseline_with_stability_warning
+baseline_status: valid_with_stability_warning
+stability_warning: true
+original_gate_b1: false
+dataset_code: glas
+model_name: resnet34_unet_boundary
+model_version: boundary_v1
+config_version: boundary_v1
+train_seed: 1234
+result_tag: formal_three_seed
+aggregation: single_seed
+smoke_check_run_name: D1_R34UNet_Boundary_GlaS_seed1234__smoke
+config_refs:
+  data: configs/data/glas.yaml
+  model: configs/model/resnet34_unet_boundary.yaml
+  train: configs/train/unet_flow_v1.yaml
+  eval: configs/eval/eval_proto_v1.yaml
+boundary:
+  insert_position: decoder_final
+  boundary_width: 3
+  boundary_loss_type: BCE
+  lambda_boundary: 0.3
+  boundary_metric_width: 3
+  boundary_metric_impl: binary_erosion_xor_plus_binary_dilation

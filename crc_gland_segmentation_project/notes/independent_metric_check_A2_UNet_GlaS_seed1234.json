@@ -1,0 +1,44 @@
+{
+  "run_name": "A2_UNet_GlaS_seed1234",
+  "check_type": "independent_png_gt_metric_recomputation",
+  "metric_implementation": "src.metrics.seg_metrics.compute_sample_segmentation_metrics",
+  "target_resize_policy": "forbidden_shape_mismatch_fails",
+  "atol": 1e-06,
+  "splits": {
+    "testA": {
+      "csv_path": "experiments/A2_UNet_GlaS_seed1234/testA_metrics.csv",
+      "sample_count": 60,
+      "missing_assets": [],
+      "mismatch_count": 0,
+      "mismatches": [],
+      "max_abs_error": {
+        "dice": 0.0,
+        "iou": 0.0,
+        "objdice": 0.0,
+        "f1": 0.0,
+        "boundary_f1": 0.0,
+        "hd95": 0.0,
+        "object_hausdorff": 0.0
+      },
+      "status": "pass"
+    },
+    "testB": {
+      "csv_path": "experiments/A2_UNet_GlaS_seed1234/testB_metrics.csv",
+      "sample_count": 20,
+      "missing_assets": [],
+      "mismatch_count": 0,
+      "mismatches": [],
+      "max_abs_error": {
+        "dice": 0.0,
+        "iou": 0.0,
+        "objdice": 0.0,
+        "f1": 0.0,
+        "boundary_f1": 0.0,
+        "hd95": 0.0,
+        "object_hausdorff": 0.0
+      },
+      "status": "pass"
+    }
+  },
+  "status": "pass"
+}

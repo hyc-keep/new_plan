@@ -1,0 +1,13 @@
+name: ResNet34UNet
+model_name: resnet34_unet
+model_version: r34_unet_v1
+in_channels: 3
+out_channels: 1
+encoder_pretrained: true
+pretrained_weights_path: weights/resnet34-b627a593.pth
+pretrained_weights_sha256: b627a593bcbe140c234610266fe4f8ae95ea42fc881d091c9b6052e6b1d0590f
+bn_policy_enabled: false
+use_lkma: false
+use_boundary_head: false
+use_distance_head: false
+arch_source: resnet34_encoder_unet_decoder_skip

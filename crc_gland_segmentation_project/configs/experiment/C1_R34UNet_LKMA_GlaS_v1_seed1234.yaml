@@ -1,0 +1,25 @@
+run_name: C1_R34UNet_LKMA_GlaS_v1_seed1234
+stage_code: C1
+dataset_code: glas
+model_name: resnet34_unet_lkma
+model_version: C1_LKMA_v1
+config_version: C1_LKMA_v1
+train_seed: 1234
+result_tag: formal_main
+aggregation: single_seed
+smoke_check_run_name: C1_R34UNet_LKMA_GlaS_v1_seed1234__smoke
+config_refs:
+  data: configs/data/glas.yaml
+  model: configs/model/resnet34_unet_lkma_v1.yaml
+  train: configs/train/unet_flow_v1.yaml
+  eval: configs/eval/eval_proto_v1.yaml
+source_stage: B1
+source_manifest: reports/stage_reports/asset_manifest.json
+source_protocol_version: current_standard
+source_run_name: B1_ResNet34_UNet_GlaS_seed1234
+consumer_stage: C1
+consumer_file: reports/tables/lkma_per_seed_summary.csv
+consumption_boundary: frozen_baseline_with_warning
+baseline_status: valid_with_stability_warning
+stability_warning: true
+original_gate_b1: false

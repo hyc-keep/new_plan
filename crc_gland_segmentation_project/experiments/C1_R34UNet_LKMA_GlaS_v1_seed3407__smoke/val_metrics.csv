@@ -1,0 +1,2 @@
+epoch,val_loss,val_loss_bce,val_loss_dice,val_objdice,val_dice,val_iou,val_f1,val_boundary_f1,val_hd95,val_object_hausdorff
+1,1.2691831588745117,0.6900288462638855,0.579154372215271,0.0,1.4827162559294952e-11,1.4827162559294952e-11,0.0,0.0,nan,nan

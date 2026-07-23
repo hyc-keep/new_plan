@@ -1,0 +1,2 @@
+epoch,epoch_train_loss,epoch_loss_bce,epoch_loss_dice,epoch_loss_boundary,epoch_loss_distance,lr,batch_size,amp,epoch_time_sec
+1,1.312682569026947,0.6892547607421875,0.6234278380870819,0.0,0.0,0.0001,2,true,1.3223

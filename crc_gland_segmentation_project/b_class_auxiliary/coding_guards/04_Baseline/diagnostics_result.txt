@@ -1,0 +1,34 @@
+[Code Syntax]
+- py_compile: pass
+- import_check: pass
+
+[Config Check]
+- yaml_valid: pass
+- path_exists: pass
+
+[Runtime Check]
+- smoke_run_pass: pass
+- dataloader_batch_check_pass: pass
+- tensor_shape_dtype_pass: pass
+- loss_finite_pass: pass
+- grad_step_pass: pass
+
+[Protocol Check]
+- version_chain_complete: pass
+- naming_rule_pass: pass
+- stage_boundary_pass: pass
+- code_quality_gate_pass: pass
+- learning_doc_gate_pass: not_applicable
+- formal_doc_gate_pass: not_applicable
+- traceability_card_complete: pass
+- best_selector_unique: pass
+- threshold_source_valid: pass
+- glas_split_export_pass: pass
+- crag_export_pass: not_applicable
+- metric_crosscheck_status: pass
+- result_tag_aggregation_pass: pass
+- external_adaptation_record_pass: not_applicable
+
+[Conclusion]
+- diagnostics_result: pass
+- blocker: numbered_stage_gate remains blocked only by TestB Object Dice stability; formal CUDA runtime, independent metric check and code-quality gate have passing evidence. Conditional downstream research is allowed with explicit stability warning, not formal handoff.

@@ -1,0 +1,64 @@
+run_name: C1_R34UNet_LKMA_GlaS_v1_seed3407__smoke
+stage_code: C1
+dataset_code: glas
+model_name: resnet34_unet_lkma
+model_module: src.models.resnet34_unet
+model_version: C1_LKMA_v1
+config_version: C1_LKMA_v1
+data_proto_version: 01_data_protocol_v1
+train_proto_version: train_proto_v1
+aug_version: light_aug_v1
+aug_profile_name: light_aug_v1
+eval_aug_enable: false
+eval_proto_version: eval_proto_v1
+loss_name: bce_dice
+loss_version: seg_loss_v1
+postprocess_version: none_in_v1
+optimizer: AdamW
+lr: 0.001
+weight_decay: 0.0001
+scheduler: ReduceLROnPlateau
+scheduler_monitor: val_objdice
+epoch_max: 120
+early_stop_patience: 20
+batch_size: 2
+amp: true
+train_seed: 3407
+best_selector: val_objdice_max
+threshold_value: 0.5
+threshold_source: val17
+result_tag: screening_main
+aggregation: single_seed
+smoke_check: true
+config_refs:
+  data: configs/data/glas.yaml
+  model: configs/model/resnet34_unet_lkma_v1.yaml
+  train: configs/train/unet_flow_v1.yaml
+  eval: configs/eval/eval_proto_v1.yaml
+boundary_metric_impl: binary_erosion_xor_plus_binary_dilation
+connected_components_impl: scipy.ndimage.label
+eval_cast_policy: float32_before_threshold
+connected_components_connectivity: 8
+stop_reason: smoke_check_complete
+best_epoch: 1
+best_metric_value: 0.0
+amp_active: false
+epoch_count: 1
+device: cpu
+best_checkpoint_path: experiments/C1_R34UNet_LKMA_GlaS_v1_seed3407__smoke/checkpoints/best.ckpt
+best_checkpoint_epoch: 1
+best_checkpoint_sha256: 8479408e66ba225c2a15f857d8692a06dcfd987ecaa26ba63de1cb34c9ab5b34
+checkpoint_identity_status: pass
+evidence_mode: sample_only
+per_run_aggregate_rows: false
+boundary_metric_width: 3
+metric_list: [f1, objdice, object_hausdorff, dice, iou, hd95, boundary_f1]
+metric_crosscheck_result: pass
+metric_crosscheck_note_path: experiments/C1_R34UNet_LKMA_GlaS_v1_seed3407__smoke/metric_crosscheck_note.md
+visual_version: visual_proto_v1
+testA_sample_count: 2
+testB_sample_count: 2
+testA_objdice: 0.0
+testB_objdice: 0.0
+num_visual_samples_testA: 1
+num_visual_samples_testB: 1

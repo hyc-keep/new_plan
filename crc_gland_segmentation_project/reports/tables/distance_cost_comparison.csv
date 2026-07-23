@@ -1,0 +1,7 @@
+seed,model_role,run_name,run_dir,epoch_time_sec_sum,epoch_time_sec_n,epoch_count,best_epoch,cost_status,inference_time_sec,gpu_memory_mb,train_time_delta_distance_minus_baseline_sec
+3407,distance,D2_R34UNet_Distance_GlaS_seed3407,experiments/D2_R34UNet_Distance_GlaS_seed3407,760.9449000000001,96,96,76,pass,BLOCKED,BLOCKED,534.7412
+3407,baseline,B1_ResNet34_UNet_GlaS_seed3407,experiments/B1_ResNet34_UNet_GlaS_seed3407,226.2037,68,68,48,pass,BLOCKED,BLOCKED,
+1234,distance,D2_R34UNet_Distance_GlaS_seed1234,experiments/D2_R34UNet_Distance_GlaS_seed1234,468.2402000000001,70,70,50,pass,BLOCKED,BLOCKED,283.74850000000004
+1234,baseline,B1_ResNet34_UNet_GlaS_seed1234,experiments/B1_ResNet34_UNet_GlaS_seed1234,184.4917,67,67,47,pass,BLOCKED,BLOCKED,
+2025,distance,D2_R34UNet_Distance_GlaS_seed2025,experiments/D2_R34UNet_Distance_GlaS_seed2025,709.8247000000002,100,100,80,pass,BLOCKED,BLOCKED,531.5338000000002
+2025,baseline,B1_ResNet34_UNet_GlaS_seed2025,experiments/B1_ResNet34_UNet_GlaS_seed2025,178.29090000000008,67,67,47,pass,BLOCKED,BLOCKED,

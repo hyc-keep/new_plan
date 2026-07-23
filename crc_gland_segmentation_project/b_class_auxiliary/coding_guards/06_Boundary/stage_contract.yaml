@@ -1,0 +1,65 @@
+stage: D1_Boundary
+stage_name: 06_Boundary
+dataset: glas
+model: resnet34_unet_boundary
+eval_proto_version: eval_proto_v1
+splits:
+  - train68
+  - val17
+  - TestA60
+  - TestB20
+sample_count:
+  train68: 68
+  val17: 17
+  TestA60: 60
+  TestB20: 20
+metric_set:
+  - F1
+  - Object Dice
+  - Object Hausdorff
+  - Dice
+  - IoU
+  - HD95
+  - Boundary F1
+raw_schema: sample_only
+aggregate_policy: per_seed_then_mean_std
+lineage:
+  source_stage: B1
+  source_manifest: reports/tables/baseline_stage_manifest.csv
+  source_protocol_version: eval_proto_v1
+  source_run_name: B1_ResNet34_UNet_GlaS_seed3407
+  consumer_stage: 06_Boundary
+  consumer_file: reports/tables/boundary_per_seed_summary.csv
+  consumption_boundary: frozen_baseline_with_warning
+runs:
+  - run_name: D1_R34UNet_Boundary_GlaS_seed3407
+    seed: 3407
+    config: configs/experiment/D1_R34UNet_Boundary_GlaS_seed3407.yaml
+    output_dir: experiments/D1_R34UNet_Boundary_GlaS_seed3407
+  - run_name: D1_R34UNet_Boundary_GlaS_seed1234
+    seed: 1234
+    config: configs/experiment/D1_R34UNet_Boundary_GlaS_seed1234.yaml
+    output_dir: experiments/D1_R34UNet_Boundary_GlaS_seed1234
+  - run_name: D1_R34UNet_Boundary_GlaS_seed2025
+    seed: 2025
+    config: configs/experiment/D1_R34UNet_Boundary_GlaS_seed2025.yaml
+    output_dir: experiments/D1_R34UNet_Boundary_GlaS_seed2025
+required_paths:
+  - name: source_manifest
+    path: reports/tables/baseline_stage_manifest.csv
+  - name: model_config
+    path: configs/model/resnet34_unet_boundary.yaml
+  - name: experiment_config
+    path: configs/experiment/D1_R34UNet_Boundary_GlaS_seed3407.yaml
+  - name: eval_config
+    path: configs/eval/eval_proto_v1.yaml
+pretrained_weight:
+  source: torchvision_resnet34_imagenet1k_v1
+  torchvision_version: 0.17.2+cu121
+  cache_path: /home/featurize/.cache/torch/hub/checkpoints/resnet34-b627a593.pth
+  sha256: b627a593bcbe140c234610266fe4f8ae95ea42fc881d091c9b6052e6b1d0590f
+  offline_policy: use_local_cache_only
+freshness:
+  current_round: D1_Boundary_screening
+  historical_exclusion: B1_and_C1_read_only
+  required_before_run: research_alignment_stage_lock_precheck_stage_contract_runtime_code_quality

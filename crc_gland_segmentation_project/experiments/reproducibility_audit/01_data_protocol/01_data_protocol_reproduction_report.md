@@ -5,7 +5,7 @@
 ```text
 阶段：01_DataProtocol
 状态：PASS
-Git commit：43fcf59
+Git commit：89dc0cd
 日期：2026-07-23
 设备：不适用（本阶段执行文件、split、格式和 hash 验证，不进行模型计算）
 ```

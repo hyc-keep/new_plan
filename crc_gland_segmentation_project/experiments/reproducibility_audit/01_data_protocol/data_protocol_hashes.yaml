@@ -1,6 +1,6 @@
 stage: 01_DataProtocol
 status: PASS
-git_commit: 43fcf59
+git_commit: 89dc0cd
 train68_count: 68
 val17_count: 17
 testA60_count: 60

@@ -81,7 +81,7 @@ from src.engine import EarlyStopper, build_scheduler, train_model
 from src.eval.checkpoint_selector import BestCheckpointState, update_best_checkpoint
 from src.losses import build_boundary_loss, build_distance_loss, build_seg_loss
 from src.models import build_unet_model
-from src.utils import collect_runtime_metadata, formal_source_paths, set_global_seed, seed_worker, sha256_file, sha256_paths, sha256_state_dict
+from src.utils import collect_reproducibility_values, set_global_seed, seed_worker, sha256_file, sha256_paths, sha256_state_dict
 
 
 def parse_args() -> argparse.Namespace:
@@ -996,37 +996,36 @@ def run_stage02_training(
             "resume_source_checkpoint": str(last_checkpoint_path.relative_to(project_root)),
         }
 
-    frozen_paths = [
-        config_path,
-        data_config_path,
-        (project_root / config_bundle["paths"]["model"]).resolve(),
-        (project_root / config_bundle["paths"]["train"]).resolve(),
-        (project_root / config_bundle["paths"]["eval"]).resolve(),
-        Path(__file__).resolve(),
-        (project_root / "src/engine/trainer.py").resolve(),
-        (project_root / "src/utils/seed.py").resolve(),
-        (project_root / "src/utils/reproducibility.py").resolve(),
-        (project_root / "b_class_auxiliary/coding_guards/reproducibility_contract.yaml").resolve(),
-    ]
-    reproducibility_contract_path = project_root / "b_class_auxiliary/coding_guards/reproducibility_contract.yaml"
-    reproducibility_contract_sha256 = sha256_file(reproducibility_contract_path)
-    frozen_paths.extend(formal_source_paths(project_root))
     data_trace_hashes = build_data_trace_hashes(project_root, data_config_path, asset_manifest_path)
+    formal_entry_paths = (
+        (project_root / "scripts/train.py").resolve(),
+        (project_root / "scripts/test.py").resolve(),
+    )
     run_meta = build_run_meta(
         experiment_config, config_bundle, data_config_obj, train_run_name, smoke_check, data_trace_hashes
     )
     pretrained_path_value = getattr(model, "pretrained_weights_path", None)
     pretrained_hash_value = getattr(model, "pretrained_weights_sha256", None)
-    run_meta["reproducibility"] = collect_runtime_metadata(
+    run_meta["reproducibility"] = collect_reproducibility_values(
         project_root,
-        frozen_paths,
+        config_path,
+        config_bundle,
+        data_trace_hashes,
+        experiment_config,
+        device,
+        bool(train_config.get("amp", False)),
+        {
+            "amp_grad_scaler_init_scale": 65536.0,
+            "amp_grad_scaler_growth_factor": 2.0,
+            "amp_grad_scaler_backoff_factor": 0.5,
+            "amp_grad_scaler_growth_interval": 2000,
+        },
+        extra_paths=formal_entry_paths,
         pretrained_weights_path=Path(pretrained_path_value).resolve() if pretrained_path_value else None,
         pretrained_weights_sha256=str(pretrained_hash_value) if pretrained_hash_value else None,
     )
-    run_meta["pythonhashseed"] = os.environ.get("PYTHONHASHSEED")
-    run_meta["cublas_workspace_config"] = os.environ.get("CUBLAS_WORKSPACE_CONFIG")
-    run_meta["reproducibility_contract_sha256"] = reproducibility_contract_sha256
-    run_meta["amp_requested"] = bool(train_config.get("amp", False))
+    run_meta.update(run_meta["reproducibility"])
+    run_meta["amp_active"] = run_meta["reproducibility"]["amp_active"]
     run_meta["amp_grad_scaler_init_scale"] = 65536.0
     run_meta["amp_grad_scaler_growth_factor"] = 2.0
     run_meta["amp_grad_scaler_backoff_factor"] = 0.5

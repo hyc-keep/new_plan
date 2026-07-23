@@ -66,14 +66,13 @@ from src.data import build_eval_transform, build_segmentation_dataset, export_bi
 from src.eval import evaluate_split, export_run_visual_assets
 from src.losses import build_boundary_loss, build_distance_loss, build_seg_loss
 from src.models import build_unet_model
-from src.utils import collect_runtime_metadata, set_global_seed, sha256_file, source_tree_sha256
+from src.utils import collect_reproducibility_values, set_global_seed
 
 
 def _validate_reproducibility(run_meta: dict[str, Any], config_path: Path, config_bundle: dict[str, Any], experiment_config: dict[str, Any], project_root: Path, device: torch.device) -> None:
     data_config_path = (project_root / config_bundle["paths"]["data"]).resolve()
     asset_manifest_path = train_entry.resolve_asset_manifest_path(project_root, experiment_config)
     hashes = train_entry.build_data_trace_hashes(project_root, data_config_path, asset_manifest_path)
-    contract_path = project_root / "b_class_auxiliary/coding_guards/reproducibility_contract.yaml"
     model_name = str(config_bundle["model"].get("model_name", config_bundle["model"].get("name", ""))).lower()
     pretrained_path: Path | None = None
     pretrained_hash: str | None = None
@@ -84,12 +83,21 @@ def _validate_reproducibility(run_meta: dict[str, Any], config_path: Path, confi
             raise ValueError("B1 model config must define pretrained_weights_path and pretrained_weights_sha256")
         pretrained_path = (project_root / str(configured_path)).resolve()
         pretrained_hash = str(configured_hash)
-    frozen_paths = [config_path, data_config_path]
-    frozen_paths.extend((project_root / config_bundle["paths"][key]).resolve() for key in ("model", "train", "eval"))
-    frozen_paths.extend([contract_path, *train_entry.formal_source_paths(project_root)])
-    current = collect_runtime_metadata(
+    current = collect_reproducibility_values(
         project_root,
-        frozen_paths,
+        config_path,
+        config_bundle,
+        hashes,
+        experiment_config,
+        device,
+        bool(config_bundle["train"].get("amp", False)),
+        {
+            "amp_grad_scaler_init_scale": 65536.0,
+            "amp_grad_scaler_growth_factor": 2.0,
+            "amp_grad_scaler_backoff_factor": 0.5,
+            "amp_grad_scaler_growth_interval": 2000,
+        },
+        extra_paths=(project_root / "scripts/train.py", project_root / "scripts/test.py"),
         pretrained_weights_path=pretrained_path,
         pretrained_weights_sha256=pretrained_hash,
     )
@@ -104,11 +112,7 @@ def _validate_reproducibility(run_meta: dict[str, Any], config_path: Path, confi
     expected = {**run_meta.get("reproducibility", {}), **run_meta}
     amp_requested = bool(config_bundle["train"].get("amp", False))
     current_values = {
-        **hashes,
         **current,
-        "pythonhashseed": os.environ.get("PYTHONHASHSEED"),
-        "cublas_workspace_config": os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
-        "reproducibility_contract_sha256": sha256_file(contract_path),
         "amp_requested": amp_requested,
         "amp_active": amp_requested and device.type == "cuda",
         "pretrained_weights_path": pretrained_path.relative_to(project_root).as_posix() if pretrained_path else "not_applicable",
@@ -137,7 +141,11 @@ def _validate_reproducibility(run_meta: dict[str, Any], config_path: Path, confi
     missing = [field for field in fields if field not in expected or expected[field] is None]
     if missing:
         raise ValueError(f"run_meta missing reproducibility fields: {missing}")
-    mismatches = [field for field in fields if expected[field] != current_values.get(field)]
+    mismatches = {
+        field: {"expected": expected[field], "current": current_values.get(field)}
+        for field in fields
+        if expected[field] != current_values.get(field)
+    }
     if mismatches:
         raise ValueError(f"reproducibility mismatch: {mismatches}")
 

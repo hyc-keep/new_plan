@@ -305,7 +305,9 @@ def _validate_test_identity(
     if "best_checkpoint_path" not in run_meta:
         raise ValueError("run_meta missing best_checkpoint_path")
     expected_checkpoint_path = str(run_meta["best_checkpoint_path"])
-    if expected_checkpoint_path != checkpoint_relative_path:
+    expected_checkpoint_resolved = (PROJECT_ROOT / expected_checkpoint_path).resolve()
+    loaded_checkpoint_resolved = (run_dir / checkpoint_relative_path).resolve()
+    if expected_checkpoint_resolved != loaded_checkpoint_resolved:
         raise ValueError(
             f"checkpoint path mismatch: run_meta={expected_checkpoint_path}, loaded={checkpoint_relative_path}"
         )

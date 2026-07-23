@@ -141,10 +141,15 @@ def _validate_reproducibility(run_meta: dict[str, Any], config_path: Path, confi
     missing = [field for field in fields if field not in expected or expected[field] is None]
     if missing:
         raise ValueError(f"run_meta missing reproducibility fields: {missing}")
+    def canonical_value(field: str, value: Any) -> Any:
+        if field in {"pythonhashseed", "cuda_runtime_version"} and value is not None:
+            return str(value)
+        return value
+
     mismatches = {
         field: {"expected": expected[field], "current": current_values.get(field)}
         for field in fields
-        if expected[field] != current_values.get(field)
+        if canonical_value(field, expected[field]) != canonical_value(field, current_values.get(field))
     }
     if mismatches:
         raise ValueError(f"reproducibility mismatch: {mismatches}")

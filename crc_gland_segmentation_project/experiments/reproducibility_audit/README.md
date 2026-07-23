@@ -23,11 +23,13 @@ experiments/B1_ResNet34_UNet_GlaS_seed1234
 experiments/B1_ResNet34_UNet_GlaS_seed2025
 ```
 
-所有复现 run 必须写入：
+所有复现 run 必须通过入口的 `--reproducibility-run` 开关写入：
 
 ```text
-experiments/reproducibility_audit/repeat_runs/
+experiments/reproducibility_audit/repeat_runs/<logical_run_name>/
 ```
+
+禁止依赖在 `--run-name` 中手工拼接路径。复现模式会自动固定输出根目录，并拒绝绝对路径和 `..` 路径穿越；普通模式仍只用于历史/正式结果目录。
 
 ## 当前结论边界
 

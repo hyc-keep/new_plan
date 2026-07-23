@@ -94,6 +94,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Formal project-local training entrypoint.")
     parser.add_argument("--config", required=True, help="Relative path to the experiment config.")
     parser.add_argument("--run-name", default=None, help="Optional logical run name override.")
+    parser.add_argument("--reproducibility-run", action="store_true", help="Write this run under experiments/reproducibility_audit/repeat_runs/.")
     parser.add_argument("--device", default="cuda", help="Requested device hint (auto-fallback to CPU if CUDA unavailable).")
     parser.add_argument("--smoke-check", action="store_true", help="Run only the minimal local smoke training loop.")
     parser.add_argument(
@@ -531,8 +532,12 @@ def load_training_configs(project_root: Path, experiment_config: dict[str, Any])
     }
 
 
-def build_output_dir(project_root: Path, run_name: str) -> Path:
-    return (project_root / "experiments" / run_name).resolve()
+def build_output_dir(project_root: Path, run_name: str, reproducibility_run: bool = False) -> Path:
+    if Path(run_name).is_absolute() or ".." in Path(run_name).parts:
+        raise ValueError("run_name must be a plain logical name without absolute or parent-traversal paths")
+    is_reproducibility_probe = run_name.endswith("__runtime_probe")
+    root = project_root / "experiments" / "reproducibility_audit" / "repeat_runs" if reproducibility_run or is_reproducibility_probe else project_root / "experiments"
+    return (root / run_name).resolve()
 
 
 def build_optimizer(
@@ -805,7 +810,7 @@ def run_stage02_training(
     train_run_name = args.run_name or (
         str(experiment_config["smoke_check_run_name"]) if smoke_check else str(experiment_config["run_name"])
     )
-    output_dir = project_root / "experiments" / train_run_name
+    output_dir = build_output_dir(project_root, train_run_name, reproducibility_run=args.reproducibility_run)
     output_dir.mkdir(parents=True, exist_ok=True)
     lock_path = output_dir / ".run.lock"
     lock_handle = lock_path.open("a+", encoding="utf-8")

@@ -152,6 +152,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Formal stage02 test entrypoint.")
     parser.add_argument("--config", required=True, help="Relative path to the experiment config.")
     parser.add_argument("--run-name", default=None, help="Optional run name override.")
+    parser.add_argument("--reproducibility-run", action="store_true", help="Read/write this run under experiments/reproducibility_audit/repeat_runs/.")
     parser.add_argument("--device", default="cuda", help="Requested device hint (auto-fallback to CPU if CUDA unavailable).")
     parser.add_argument("--checkpoint", default=None, help="Optional checkpoint path override.")
     parser.add_argument(
@@ -178,9 +179,13 @@ def _relative_path(path: Path) -> str:
     return path.resolve().relative_to(PROJECT_ROOT).as_posix()
 
 
-def _resolve_run_dir(experiment_config: dict[str, Any], run_name_override: str | None) -> Path:
+def _resolve_run_dir(
+    experiment_config: dict[str, Any],
+    run_name_override: str | None,
+    reproducibility_run: bool,
+) -> Path:
     run_name = run_name_override or str(experiment_config["run_name"])
-    return train_entry.build_output_dir(PROJECT_ROOT, run_name)
+    return train_entry.build_output_dir(PROJECT_ROOT, run_name, reproducibility_run=reproducibility_run)
 
 
 def _resolve_checkpoint_path(run_dir: Path, checkpoint_override: str | None) -> Path:
@@ -585,7 +590,7 @@ def main() -> int:
     args = parse_args()
     config_path, experiment_config = train_entry.load_experiment_config(PROJECT_ROOT, args.config)
     config_bundle = train_entry.load_training_configs(PROJECT_ROOT, experiment_config)
-    run_dir = _resolve_run_dir(experiment_config, args.run_name)
+    run_dir = _resolve_run_dir(experiment_config, args.run_name, args.reproducibility_run)
     run_meta_path = run_dir / "run_meta.yaml"
     if not run_meta_path.exists():
         raise FileNotFoundError(f"run_meta.yaml not found: {run_meta_path}")

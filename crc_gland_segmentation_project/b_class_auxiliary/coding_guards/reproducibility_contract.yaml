@@ -16,7 +16,7 @@ checkpoint_policy:
 comparison_policy:
   strict: true
   fields: [data_config_sha256, split_manifest_sha256, asset_manifest_sha256, dataset_files_sha256, source_tree_sha256, frozen_source_config_sha256, reproducibility_contract_sha256, pythonhashseed, cublas_workspace_config, torch_version, cuda_runtime_version, cudnn_version, cuda_devices, amp_requested, amp_active]
-output_root: experiments
+output_root: experiments/reproducibility_audit
 stage_protocols:
   '01': {reproduction_objects: [data_config, split_manifests, asset_manifest, dataset_files], formal_outputs: [data_protocol_gate, data_manifest]}
   '02': {reproduction_objects: [unet_flow_source, training_config, evaluation_config], formal_outputs: [run_meta, checkpoints, metrics]}

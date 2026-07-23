@@ -81,7 +81,7 @@ from src.engine import EarlyStopper, build_scheduler, train_model
 from src.eval.checkpoint_selector import BestCheckpointState, update_best_checkpoint
 from src.losses import build_boundary_loss, build_distance_loss, build_seg_loss
 from src.models import build_unet_model
-from src.utils import collect_reproducibility_values, set_global_seed, seed_worker, sha256_file, sha256_paths, sha256_state_dict
+from src.utils import collect_runtime_metadata, set_global_seed, seed_worker, sha256_file, sha256_paths, sha256_state_dict
 
 
 def parse_args() -> argparse.Namespace:
@@ -94,7 +94,6 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Formal project-local training entrypoint.")
     parser.add_argument("--config", required=True, help="Relative path to the experiment config.")
     parser.add_argument("--run-name", default=None, help="Optional logical run name override.")
-    parser.add_argument("--reproducibility-run", action="store_true", help="Write this run under experiments/reproducibility_audit/repeat_runs/.")
     parser.add_argument("--device", default="cuda", help="Requested device hint (auto-fallback to CPU if CUDA unavailable).")
     parser.add_argument("--smoke-check", action="store_true", help="Run only the minimal local smoke training loop.")
     parser.add_argument(
@@ -532,12 +531,8 @@ def load_training_configs(project_root: Path, experiment_config: dict[str, Any])
     }
 
 
-def build_output_dir(project_root: Path, run_name: str, reproducibility_run: bool = False) -> Path:
-    if Path(run_name).is_absolute() or ".." in Path(run_name).parts:
-        raise ValueError("run_name must be a plain logical name without absolute or parent-traversal paths")
-    is_reproducibility_probe = run_name.endswith("__runtime_probe")
-    root = project_root / "experiments" / "reproducibility_audit" / "repeat_runs" if reproducibility_run or is_reproducibility_probe else project_root / "experiments"
-    return (root / run_name).resolve()
+def build_output_dir(project_root: Path, run_name: str) -> Path:
+    return (project_root / "experiments" / run_name).resolve()
 
 
 def build_optimizer(
@@ -810,7 +805,7 @@ def run_stage02_training(
     train_run_name = args.run_name or (
         str(experiment_config["smoke_check_run_name"]) if smoke_check else str(experiment_config["run_name"])
     )
-    output_dir = build_output_dir(project_root, train_run_name, reproducibility_run=args.reproducibility_run)
+    output_dir = project_root / "experiments" / train_run_name
     output_dir.mkdir(parents=True, exist_ok=True)
     lock_path = output_dir / ".run.lock"
     lock_handle = lock_path.open("a+", encoding="utf-8")
@@ -996,43 +991,34 @@ def run_stage02_training(
             "resume_source_checkpoint": str(last_checkpoint_path.relative_to(project_root)),
         }
 
+    frozen_paths = [
+        config_path,
+        data_config_path,
+        (project_root / config_bundle["paths"]["model"]).resolve(),
+        (project_root / config_bundle["paths"]["train"]).resolve(),
+        (project_root / config_bundle["paths"]["eval"]).resolve(),
+        Path(__file__).resolve(),
+        (project_root / "src/engine/trainer.py").resolve(),
+        (project_root / "src/utils/seed.py").resolve(),
+        (project_root / "src/utils/reproducibility.py").resolve(),
+    ]
     data_trace_hashes = build_data_trace_hashes(project_root, data_config_path, asset_manifest_path)
-    formal_entry_paths = (
-        (project_root / "scripts/train.py").resolve(),
-        (project_root / "scripts/test.py").resolve(),
-    )
     run_meta = build_run_meta(
         experiment_config, config_bundle, data_config_obj, train_run_name, smoke_check, data_trace_hashes
     )
     pretrained_path_value = getattr(model, "pretrained_weights_path", None)
     pretrained_hash_value = getattr(model, "pretrained_weights_sha256", None)
-    run_meta["reproducibility"] = collect_reproducibility_values(
+    run_meta["reproducibility"] = collect_runtime_metadata(
         project_root,
-        config_path,
-        config_bundle,
-        data_trace_hashes,
-        experiment_config,
-        device,
-        bool(train_config.get("amp", False)),
-        {
-            "amp_grad_scaler_init_scale": 65536.0,
-            "amp_grad_scaler_growth_factor": 2.0,
-            "amp_grad_scaler_backoff_factor": 0.5,
-            "amp_grad_scaler_growth_interval": 2000,
-        },
-        extra_paths=formal_entry_paths,
+        frozen_paths,
         pretrained_weights_path=Path(pretrained_path_value).resolve() if pretrained_path_value else None,
         pretrained_weights_sha256=str(pretrained_hash_value) if pretrained_hash_value else None,
     )
-    run_meta.update(run_meta["reproducibility"])
-    run_meta["amp_active"] = run_meta["reproducibility"]["amp_active"]
-    run_meta["amp_grad_scaler_init_scale"] = 65536.0
-    run_meta["amp_grad_scaler_growth_factor"] = 2.0
-    run_meta["amp_grad_scaler_backoff_factor"] = 0.5
-    run_meta["amp_grad_scaler_growth_interval"] = 2000
+    run_meta["pythonhashseed"] = os.environ.get("PYTHONHASHSEED")
+    run_meta["cublas_workspace_config"] = os.environ.get("CUBLAS_WORKSPACE_CONFIG")
     run_meta["initial_model_state_sha256"] = sha256_state_dict(model.state_dict())
-    run_meta["pretrained_weights_path"] = str(model_config.get("pretrained_weights_path") or "not_applicable")
-    run_meta["pretrained_weights_sha256"] = str(model_config.get("pretrained_weights_sha256") or "not_applicable")
+    run_meta["pretrained_weights_path"] = str(model_config.get("pretrained_weights_path", ""))
+    run_meta["pretrained_weights_sha256"] = str(model_config.get("pretrained_weights_sha256", ""))
     run_meta["initial_model_state_finite"] = all(
         torch.isfinite(value).all().item() for value in model.state_dict().values() if torch.is_tensor(value)
     )

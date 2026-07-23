@@ -15,7 +15,7 @@
 - 正式训练入口统一从 `src.utils` 取 reproducibility 入口，方便说明文把“包级门面”和“seed 具体实现”拆开讲。
 """
 
-from .reproducibility import build_frozen_paths, collect_reproducibility_values, collect_runtime_metadata, formal_source_paths, sha256_file, sha256_paths, sha256_state_dict, source_tree_sha256
+from .reproducibility import collect_runtime_metadata, sha256_file, sha256_paths, sha256_state_dict
 from .seed import seed_worker, set_global_seed
 
-__all__ = ["build_frozen_paths", "collect_reproducibility_values", "collect_runtime_metadata", "seed_worker", "set_global_seed", "sha256_file", "sha256_paths", "sha256_state_dict"]
+__all__ = ["collect_runtime_metadata", "seed_worker", "set_global_seed", "sha256_file", "sha256_paths", "sha256_state_dict"]

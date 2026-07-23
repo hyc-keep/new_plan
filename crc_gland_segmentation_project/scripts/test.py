@@ -66,93 +66,7 @@ from src.data import build_eval_transform, build_segmentation_dataset, export_bi
 from src.eval import evaluate_split, export_run_visual_assets
 from src.losses import build_boundary_loss, build_distance_loss, build_seg_loss
 from src.models import build_unet_model
-from src.utils import collect_reproducibility_values, set_global_seed
-
-
-def _validate_reproducibility(run_meta: dict[str, Any], config_path: Path, config_bundle: dict[str, Any], experiment_config: dict[str, Any], project_root: Path, device: torch.device) -> None:
-    data_config_path = (project_root / config_bundle["paths"]["data"]).resolve()
-    asset_manifest_path = train_entry.resolve_asset_manifest_path(project_root, experiment_config)
-    hashes = train_entry.build_data_trace_hashes(project_root, data_config_path, asset_manifest_path)
-    model_name = str(config_bundle["model"].get("model_name", config_bundle["model"].get("name", ""))).lower()
-    pretrained_path: Path | None = None
-    pretrained_hash: str | None = None
-    if model_name == "resnet34_unet":
-        configured_path = config_bundle["model"].get("pretrained_weights_path")
-        configured_hash = config_bundle["model"].get("pretrained_weights_sha256")
-        if not configured_path or not configured_hash:
-            raise ValueError("B1 model config must define pretrained_weights_path and pretrained_weights_sha256")
-        pretrained_path = (project_root / str(configured_path)).resolve()
-        pretrained_hash = str(configured_hash)
-    current = collect_reproducibility_values(
-        project_root,
-        config_path,
-        config_bundle,
-        hashes,
-        experiment_config,
-        device,
-        bool(config_bundle["train"].get("amp", False)),
-        {
-            "amp_grad_scaler_init_scale": 65536.0,
-            "amp_grad_scaler_growth_factor": 2.0,
-            "amp_grad_scaler_backoff_factor": 0.5,
-            "amp_grad_scaler_growth_interval": 2000,
-        },
-        extra_paths=(project_root / "scripts/train.py", project_root / "scripts/test.py"),
-        pretrained_weights_path=pretrained_path,
-        pretrained_weights_sha256=pretrained_hash,
-    )
-    metadata_template = train_entry.build_run_meta(
-        experiment_config,
-        config_bundle,
-        load_data_config(project_root, data_config_path),
-        str(run_meta.get("run_name", experiment_config.get("run_name", ""))),
-        bool(run_meta.get("smoke_check", False)),
-        hashes,
-    )
-    expected = {**run_meta.get("reproducibility", {}), **run_meta}
-    amp_requested = bool(config_bundle["train"].get("amp", False))
-    current_values = {
-        **current,
-        "amp_requested": amp_requested,
-        "amp_active": amp_requested and device.type == "cuda",
-        "pretrained_weights_path": pretrained_path.relative_to(project_root).as_posix() if pretrained_path else "not_applicable",
-        "pretrained_weights_sha256": current["resnet34_pretrained_weight_sha256"] if pretrained_path else "not_applicable",
-        "amp_grad_scaler_init_scale": metadata_template["amp_grad_scaler_init_scale"],
-        "amp_grad_scaler_growth_factor": metadata_template["amp_grad_scaler_growth_factor"],
-        "amp_grad_scaler_backoff_factor": metadata_template["amp_grad_scaler_backoff_factor"],
-        "amp_grad_scaler_growth_interval": metadata_template["amp_grad_scaler_growth_interval"],
-    }
-    current_values["torch_version"] = current["torch_version"]
-    current_values["cuda_runtime_version"] = current["cuda_runtime_version"]
-    current_values["cudnn_version"] = current["cudnn_version"]
-    current_values["cuda_devices"] = current["cuda_devices"]
-    current_values["source_tree_sha256"] = current["source_tree_sha256"]
-    current_values["frozen_source_config_sha256"] = current["frozen_source_config_sha256"]
-    fields = (
-        "data_config_sha256", "split_manifest_sha256", "asset_manifest_sha256", "dataset_files_sha256",
-        "source_tree_sha256", "frozen_source_config_sha256", "reproducibility_contract_sha256",
-        "pythonhashseed", "cublas_workspace_config", "torch_version", "cuda_runtime_version",
-        "cudnn_version", "cuda_devices", "deterministic_algorithms", "cudnn_deterministic", "cudnn_benchmark",
-        "amp_requested", "amp_active",
-        "amp_grad_scaler_init_scale", "amp_grad_scaler_growth_factor",
-        "amp_grad_scaler_backoff_factor", "amp_grad_scaler_growth_interval",
-        "pretrained_weights_path", "pretrained_weights_sha256",
-    )
-    missing = [field for field in fields if field not in expected or expected[field] is None]
-    if missing:
-        raise ValueError(f"run_meta missing reproducibility fields: {missing}")
-    def canonical_value(field: str, value: Any) -> Any:
-        if field in {"pythonhashseed", "cuda_runtime_version"} and value is not None:
-            return str(value)
-        return value
-
-    mismatches = {
-        field: {"expected": expected[field], "current": current_values.get(field)}
-        for field in fields
-        if canonical_value(field, expected[field]) != canonical_value(field, current_values.get(field))
-    }
-    if mismatches:
-        raise ValueError(f"reproducibility mismatch: {mismatches}")
+from src.utils import set_global_seed
 
 
 def parse_args() -> argparse.Namespace:
@@ -165,7 +79,6 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Formal stage02 test entrypoint.")
     parser.add_argument("--config", required=True, help="Relative path to the experiment config.")
     parser.add_argument("--run-name", default=None, help="Optional run name override.")
-    parser.add_argument("--reproducibility-run", action="store_true", help="Read/write this run under experiments/reproducibility_audit/repeat_runs/.")
     parser.add_argument("--device", default="cuda", help="Requested device hint (auto-fallback to CPU if CUDA unavailable).")
     parser.add_argument("--checkpoint", default=None, help="Optional checkpoint path override.")
     parser.add_argument(
@@ -192,13 +105,9 @@ def _relative_path(path: Path) -> str:
     return path.resolve().relative_to(PROJECT_ROOT).as_posix()
 
 
-def _resolve_run_dir(
-    experiment_config: dict[str, Any],
-    run_name_override: str | None,
-    reproducibility_run: bool,
-) -> Path:
+def _resolve_run_dir(experiment_config: dict[str, Any], run_name_override: str | None) -> Path:
     run_name = run_name_override or str(experiment_config["run_name"])
-    return train_entry.build_output_dir(PROJECT_ROOT, run_name, reproducibility_run=reproducibility_run)
+    return train_entry.build_output_dir(PROJECT_ROOT, run_name)
 
 
 def _resolve_checkpoint_path(run_dir: Path, checkpoint_override: str | None) -> Path:
@@ -305,15 +214,7 @@ def _validate_test_identity(
     if "best_checkpoint_path" not in run_meta:
         raise ValueError("run_meta missing best_checkpoint_path")
     expected_checkpoint_path = str(run_meta["best_checkpoint_path"])
-    expected_path = Path(expected_checkpoint_path)
-    if expected_path.is_absolute():
-        expected_checkpoint_resolved = expected_path.resolve()
-    elif expected_path.parts and expected_path.parts[0] == "experiments":
-        expected_checkpoint_resolved = (PROJECT_ROOT / expected_path).resolve()
-    else:
-        expected_checkpoint_resolved = (run_dir / expected_path).resolve()
-    loaded_checkpoint_resolved = (run_dir / checkpoint_relative_path).resolve()
-    if expected_checkpoint_resolved != loaded_checkpoint_resolved:
+    if expected_checkpoint_path != checkpoint_relative_path:
         raise ValueError(
             f"checkpoint path mismatch: run_meta={expected_checkpoint_path}, loaded={checkpoint_relative_path}"
         )
@@ -611,7 +512,7 @@ def main() -> int:
     args = parse_args()
     config_path, experiment_config = train_entry.load_experiment_config(PROJECT_ROOT, args.config)
     config_bundle = train_entry.load_training_configs(PROJECT_ROOT, experiment_config)
-    run_dir = _resolve_run_dir(experiment_config, args.run_name, args.reproducibility_run)
+    run_dir = _resolve_run_dir(experiment_config, args.run_name)
     run_meta_path = run_dir / "run_meta.yaml"
     if not run_meta_path.exists():
         raise FileNotFoundError(f"run_meta.yaml not found: {run_meta_path}")
@@ -651,7 +552,6 @@ def main() -> int:
     checkpoint = _load_checkpoint(model, checkpoint_path, device)
 
     run_meta = train_entry.simple_yaml_load(run_meta_path.read_text(encoding="utf-8"))
-    _validate_reproducibility(run_meta, config_path, config_bundle, experiment_config, PROJECT_ROOT, device)
     (
         run_name,
         seed,

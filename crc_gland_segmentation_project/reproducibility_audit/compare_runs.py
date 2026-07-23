@@ -14,7 +14,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 ALLOWED_METADATA_DIFFERENCES = {"run_name", "timestamp", "created_at", "updated_at", "output_dir", "run_dir"}
 REQUIRED_FILES = ("run_meta.yaml", "train_log.csv", "val_metrics.csv", "testA_metrics.csv", "testB_metrics.csv", "checkpoints/best.ckpt", "checkpoints/last.ckpt")
-STRICT_METADATA_KEYS = {"config_version", "stage_code", "dataset_code", "model_name", "model_version", "train_proto_version", "eval_proto_version", "train_seed", "best_checkpoint_path", "best_checkpoint_sha256", "best_checkpoint_epoch", "best_metric_value", "data_config_sha256", "split_manifest_sha256", "asset_manifest_sha256", "dataset_files_sha256", "initial_model_state_sha256", "pretrained_weights_path", "pretrained_weights_sha256", "source_tree_sha256", "frozen_source_config_sha256", "reproducibility", "executable", "git_commit"}
+STRICT_METADATA_KEYS = {"config_version", "stage_code", "dataset_code", "model_name", "model_version", "train_proto_version", "eval_proto_version", "train_seed", "best_checkpoint_path", "best_checkpoint_sha256", "best_checkpoint_epoch", "best_metric_value", "data_config_sha256", "split_manifest_sha256", "asset_manifest_sha256", "dataset_files_sha256", "initial_model_state_sha256", "pretrained_weights_path", "pretrained_weights_sha256", "source_tree_sha256", "frozen_source_config_sha256", "reproducibility_contract_sha256", "pythonhashseed", "cublas_workspace_config", "amp_requested", "amp_active", "amp_grad_scaler_init_scale", "amp_grad_scaler_growth_factor", "amp_grad_scaler_backoff_factor", "amp_grad_scaler_growth_interval", "pretrained_weights_sha256", "reproducibility", "executable", "git_commit"}
 
 
 def file_sha256(path: Path) -> str:

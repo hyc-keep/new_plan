@@ -1,0 +1,24 @@
+contract_version: reproducibility_contract_v1
+source_tree_policy:
+  roots: [scripts, src, reproducibility_audit, b_class_auxiliary/tools, configs, b_class_auxiliary/coding_guards]
+  include_extensions: [.py, .yaml, .yml]
+  exclusions: [__pycache__, experiments, datasets, checkpoints, logs, historical_archive]
+data_hash_policy:
+  fields: [data_config_sha256, split_manifest_sha256, asset_manifest_sha256, dataset_files_sha256]
+environment_policy:
+  fields: [pythonhashseed, cublas_workspace_config, torch_version, cuda_runtime_version, cudnn_version, cuda_devices]
+rng_policy:
+  required: [train_seed, pythonhashseed, cublas_workspace_config, deterministic_algorithms, cudnn_deterministic, cudnn_benchmark]
+amp_policy:
+  fields: [amp, amp_requested, amp_active, amp_grad_scaler_init_scale, amp_grad_scaler_growth_factor, amp_grad_scaler_backoff_factor, amp_grad_scaler_growth_interval]
+checkpoint_policy:
+  fields: [best_checkpoint_path, best_checkpoint_sha256, pretrained_weights_path, pretrained_weights_sha256]
+comparison_policy:
+  strict: true
+  fields: [data_config_sha256, split_manifest_sha256, asset_manifest_sha256, dataset_files_sha256, source_tree_sha256, frozen_source_config_sha256, reproducibility_contract_sha256, pythonhashseed, cublas_workspace_config, torch_version, cuda_runtime_version, cudnn_version, cuda_devices, amp_requested, amp_active]
+output_root: experiments
+stage_protocols:
+  '01': {reproduction_objects: [data_config, split_manifests, asset_manifest, dataset_files], formal_outputs: [data_protocol_gate, data_manifest]}
+  '02': {reproduction_objects: [unet_flow_source, training_config, evaluation_config], formal_outputs: [run_meta, checkpoints, metrics]}
+  '03': {reproduction_objects: [stability_sources, seeds, evaluation_protocol], formal_outputs: [run_meta, raw_metrics, aggregate_metrics, crosscheck]}
+freeze_policy: rules_are_frozen_before_formal_reproduction_and_only_results_are_appended_after_reproduction

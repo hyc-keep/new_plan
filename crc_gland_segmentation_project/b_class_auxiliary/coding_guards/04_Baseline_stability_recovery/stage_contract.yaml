@@ -1,3 +1,4 @@
+parent_contract: b_class_auxiliary/coding_guards/reproducibility_contract.yaml
 stage: 04_Baseline
 dataset: glas
 model: paired_a2_unet_b1_resnet34_unet
@@ -84,11 +85,15 @@ required_paths:
 pretrained_weight:
   source: torchvision ResNet34 IMAGENET1K_V1
   torchvision_version: 0.17.2+cu121
-  cache_path: /home/featurize/.cache/torch/hub/checkpoints/resnet34-b627a593.pth
+  cache_path: weights/resnet34-b627a593.pth
   sha256: b627a593bcbe140c234610266fe4f8ae95ea42fc881d091c9b6052e6b1d0590f
   offline_policy: load_from_verified_local_cache_without_network
 
+historical_only: true
+historical_only_reason: historical recovery contract retained for provenance; it does not participate in the current original_protocol_reproduction Gate
+
 freshness:
-  current_round: baseline_stability_v2_lr_stable_identity_reset
+  current_round: historical_baseline_stability_v2_lr_stable_identity_reset_recovery
+  current_round_scope: historical recovery evidence only; not eligible for active baseline gate
   historical_exclusion: experiments/_historical_archive;experiments/*__smoke;experiments/*__runtime_probe
   required_before_run: freeze current code/config/manifest/contract; run isolated runtime and smoke; formal outputs must be fresh and independently checked

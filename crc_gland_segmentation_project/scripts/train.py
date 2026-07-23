@@ -81,7 +81,7 @@ from src.engine import EarlyStopper, build_scheduler, train_model
 from src.eval.checkpoint_selector import BestCheckpointState, update_best_checkpoint
 from src.losses import build_boundary_loss, build_distance_loss, build_seg_loss
 from src.models import build_unet_model
-from src.utils import collect_runtime_metadata, set_global_seed, seed_worker, sha256_file, sha256_paths, sha256_state_dict
+from src.utils import collect_runtime_metadata, formal_source_paths, set_global_seed, seed_worker, sha256_file, sha256_paths, sha256_state_dict
 
 
 def parse_args() -> argparse.Namespace:
@@ -1001,7 +1001,11 @@ def run_stage02_training(
         (project_root / "src/engine/trainer.py").resolve(),
         (project_root / "src/utils/seed.py").resolve(),
         (project_root / "src/utils/reproducibility.py").resolve(),
+        (project_root / "b_class_auxiliary/coding_guards/reproducibility_contract.yaml").resolve(),
     ]
+    reproducibility_contract_path = project_root / "b_class_auxiliary/coding_guards/reproducibility_contract.yaml"
+    reproducibility_contract_sha256 = sha256_file(reproducibility_contract_path)
+    frozen_paths.extend(formal_source_paths(project_root))
     data_trace_hashes = build_data_trace_hashes(project_root, data_config_path, asset_manifest_path)
     run_meta = build_run_meta(
         experiment_config, config_bundle, data_config_obj, train_run_name, smoke_check, data_trace_hashes
@@ -1016,9 +1020,15 @@ def run_stage02_training(
     )
     run_meta["pythonhashseed"] = os.environ.get("PYTHONHASHSEED")
     run_meta["cublas_workspace_config"] = os.environ.get("CUBLAS_WORKSPACE_CONFIG")
+    run_meta["reproducibility_contract_sha256"] = reproducibility_contract_sha256
+    run_meta["amp_requested"] = bool(train_config.get("amp", False))
+    run_meta["amp_grad_scaler_init_scale"] = 65536.0
+    run_meta["amp_grad_scaler_growth_factor"] = 2.0
+    run_meta["amp_grad_scaler_backoff_factor"] = 0.5
+    run_meta["amp_grad_scaler_growth_interval"] = 2000
     run_meta["initial_model_state_sha256"] = sha256_state_dict(model.state_dict())
-    run_meta["pretrained_weights_path"] = str(model_config.get("pretrained_weights_path", ""))
-    run_meta["pretrained_weights_sha256"] = str(model_config.get("pretrained_weights_sha256", ""))
+    run_meta["pretrained_weights_path"] = str(model_config.get("pretrained_weights_path") or "not_applicable")
+    run_meta["pretrained_weights_sha256"] = str(model_config.get("pretrained_weights_sha256") or "not_applicable")
     run_meta["initial_model_state_finite"] = all(
         torch.isfinite(value).all().item() for value in model.state_dict().values() if torch.is_tensor(value)
     )

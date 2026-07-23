@@ -70,7 +70,22 @@ def main() -> int:
     errors: list[str] = []
     warnings: list[str] = []
 
+    parent_contract_value = contract.get("parent_contract")
+    if not parent_contract_value or Path(str(parent_contract_value)).is_absolute():
+        errors.append("parent_contract_missing_or_absolute")
+    else:
+        parent_path = check_path(project_root, str(parent_contract_value), "parent_contract", errors)
+        if parent_path:
+            parent = load_mapping(parent_path)
+            for key in ("contract_version", "source_tree_policy", "data_hash_policy", "environment_policy", "rng_policy", "amp_policy", "checkpoint_policy", "comparison_policy", "output_root"):
+                if not parent.get(key):
+                    errors.append(f"reproducibility_contract_missing:{key}")
+
     for key in REQUIRED_IDENTITY:
+        if key == "runs":
+            if contract.get("stage") not in {"01_DataProtocol", "02_UNetFlow"} and not contract.get(key):
+                errors.append(f"identity_missing:{key}")
+            continue
         if not contract.get(key):
             errors.append(f"identity_missing:{key}")
     for key in REQUIRED_SCHEMA:
@@ -102,23 +117,33 @@ def main() -> int:
             if output_path.exists():
                 warnings.append(f"freshness_output_exists:{output_dir}")
 
-    weight = contract.get("pretrained_weight", {})
+    weight = contract.get("pretrained_weight")
+    if weight is None:
+        weight = {}
     for key in ("source", "torchvision_version", "cache_path", "sha256", "offline_policy"):
         value = weight.get(key)
-        if not value or value in {"UNVERIFIED", "TO_BE_FROZEN", "UNKNOWN"}:
+        if weight and (not value or value in {"UNVERIFIED", "TO_BE_FROZEN", "UNKNOWN"}):
             errors.append(f"weight_unverified:{key}")
     cache_path = weight.get("cache_path")
     if cache_path and cache_path not in {"UNVERIFIED", "TO_BE_FROZEN", "UNKNOWN"}:
+        if Path(str(cache_path)).is_absolute():
+            errors.append("weight_path_must_be_relative")
         resolved_cache = check_path(project_root, str(cache_path), "pretrained_weight.cache_path", errors)
         if resolved_cache and resolved_cache.is_file():
             actual_hash = sha256(resolved_cache)
             if actual_hash != str(weight.get("sha256")):
                 errors.append("weight_sha256_mismatch")
 
+    historical_only = bool(contract.get("historical_only", False))
+    if historical_only and contract.get("stage") == "04_Baseline":
+        if not str(contract.get("historical_only_reason", "")).strip():
+            errors.append("historical_only_reason_missing")
     freshness = contract.get("freshness", {})
     for key in ("current_round", "historical_exclusion", "required_before_run"):
         if not freshness.get(key):
             errors.append(f"freshness_missing:{key}")
+    if historical_only and "original_protocol_reproduction" in str(freshness.get("current_round_scope", "")):
+        errors.append("historical_contract_current_scope_conflict")
 
     status = "pass" if not errors else "fail"
     args.output.parent.mkdir(parents=True, exist_ok=True)

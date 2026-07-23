@@ -66,7 +66,80 @@ from src.data import build_eval_transform, build_segmentation_dataset, export_bi
 from src.eval import evaluate_split, export_run_visual_assets
 from src.losses import build_boundary_loss, build_distance_loss, build_seg_loss
 from src.models import build_unet_model
-from src.utils import set_global_seed
+from src.utils import collect_runtime_metadata, set_global_seed, sha256_file, source_tree_sha256
+
+
+def _validate_reproducibility(run_meta: dict[str, Any], config_path: Path, config_bundle: dict[str, Any], experiment_config: dict[str, Any], project_root: Path, device: torch.device) -> None:
+    data_config_path = (project_root / config_bundle["paths"]["data"]).resolve()
+    asset_manifest_path = train_entry.resolve_asset_manifest_path(project_root, experiment_config)
+    hashes = train_entry.build_data_trace_hashes(project_root, data_config_path, asset_manifest_path)
+    contract_path = project_root / "b_class_auxiliary/coding_guards/reproducibility_contract.yaml"
+    model_name = str(config_bundle["model"].get("model_name", config_bundle["model"].get("name", ""))).lower()
+    pretrained_path: Path | None = None
+    pretrained_hash: str | None = None
+    if model_name == "resnet34_unet":
+        configured_path = config_bundle["model"].get("pretrained_weights_path")
+        configured_hash = config_bundle["model"].get("pretrained_weights_sha256")
+        if not configured_path or not configured_hash:
+            raise ValueError("B1 model config must define pretrained_weights_path and pretrained_weights_sha256")
+        pretrained_path = (project_root / str(configured_path)).resolve()
+        pretrained_hash = str(configured_hash)
+    frozen_paths = [config_path, data_config_path]
+    frozen_paths.extend((project_root / config_bundle["paths"][key]).resolve() for key in ("model", "train", "eval"))
+    frozen_paths.extend([contract_path, *train_entry.formal_source_paths(project_root)])
+    current = collect_runtime_metadata(
+        project_root,
+        frozen_paths,
+        pretrained_weights_path=pretrained_path,
+        pretrained_weights_sha256=pretrained_hash,
+    )
+    metadata_template = train_entry.build_run_meta(
+        experiment_config,
+        config_bundle,
+        load_data_config(project_root, data_config_path),
+        str(run_meta.get("run_name", experiment_config.get("run_name", ""))),
+        bool(run_meta.get("smoke_check", False)),
+        hashes,
+    )
+    expected = {**run_meta.get("reproducibility", {}), **run_meta}
+    amp_requested = bool(config_bundle["train"].get("amp", False))
+    current_values = {
+        **hashes,
+        **current,
+        "pythonhashseed": os.environ.get("PYTHONHASHSEED"),
+        "cublas_workspace_config": os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
+        "reproducibility_contract_sha256": sha256_file(contract_path),
+        "amp_requested": amp_requested,
+        "amp_active": amp_requested and device.type == "cuda",
+        "pretrained_weights_path": pretrained_path.relative_to(project_root).as_posix() if pretrained_path else "not_applicable",
+        "pretrained_weights_sha256": current["resnet34_pretrained_weight_sha256"] if pretrained_path else "not_applicable",
+        "amp_grad_scaler_init_scale": metadata_template["amp_grad_scaler_init_scale"],
+        "amp_grad_scaler_growth_factor": metadata_template["amp_grad_scaler_growth_factor"],
+        "amp_grad_scaler_backoff_factor": metadata_template["amp_grad_scaler_backoff_factor"],
+        "amp_grad_scaler_growth_interval": metadata_template["amp_grad_scaler_growth_interval"],
+    }
+    current_values["torch_version"] = current["torch_version"]
+    current_values["cuda_runtime_version"] = current["cuda_runtime_version"]
+    current_values["cudnn_version"] = current["cudnn_version"]
+    current_values["cuda_devices"] = current["cuda_devices"]
+    current_values["source_tree_sha256"] = current["source_tree_sha256"]
+    current_values["frozen_source_config_sha256"] = current["frozen_source_config_sha256"]
+    fields = (
+        "data_config_sha256", "split_manifest_sha256", "asset_manifest_sha256", "dataset_files_sha256",
+        "source_tree_sha256", "frozen_source_config_sha256", "reproducibility_contract_sha256",
+        "pythonhashseed", "cublas_workspace_config", "torch_version", "cuda_runtime_version",
+        "cudnn_version", "cuda_devices", "deterministic_algorithms", "cudnn_deterministic", "cudnn_benchmark",
+        "amp_requested", "amp_active",
+        "amp_grad_scaler_init_scale", "amp_grad_scaler_growth_factor",
+        "amp_grad_scaler_backoff_factor", "amp_grad_scaler_growth_interval",
+        "pretrained_weights_path", "pretrained_weights_sha256",
+    )
+    missing = [field for field in fields if field not in expected or expected[field] is None]
+    if missing:
+        raise ValueError(f"run_meta missing reproducibility fields: {missing}")
+    mismatches = [field for field in fields if expected[field] != current_values.get(field)]
+    if mismatches:
+        raise ValueError(f"reproducibility mismatch: {mismatches}")
 
 
 def parse_args() -> argparse.Namespace:
@@ -552,6 +625,7 @@ def main() -> int:
     checkpoint = _load_checkpoint(model, checkpoint_path, device)
 
     run_meta = train_entry.simple_yaml_load(run_meta_path.read_text(encoding="utf-8"))
+    _validate_reproducibility(run_meta, config_path, config_bundle, experiment_config, PROJECT_ROOT, device)
     (
         run_name,
         seed,

@@ -1,0 +1,16 @@
+parent_contract: b_class_auxiliary/coding_guards/reproducibility_contract.yaml
+stage: 02_UNetFlow
+dataset: glas
+model: unet
+eval_proto_version: eval_proto_v1
+runs: []
+splits: [train68, val17, TestA60, TestB20]
+sample_count: {train68: 68, val17: 17, TestA60: 60, TestB20: 20}
+metric_set: [dice, iou, objdice]
+raw_schema: run_meta_and_metrics
+aggregate_policy: per_seed_then_mean_std
+lineage: {source_stage: 01_DataProtocol, source_manifest: reports/stage_reports/asset_manifest.json, source_protocol_version: 01_data_protocol_v1, source_run_name: data_protocol, consumer_stage: 02_UNetFlow, consumer_file: configs/model/unet_v1.yaml, consumption_boundary: frozen_data_protocol}
+required_paths:
+  - {name: model_config, path: configs/model/unet_v1.yaml}
+  - {name: train_config, path: configs/train/unet_flow_v1.yaml}
+freshness: {current_round: unet_flow_v1, historical_exclusion: experiments, required_before_run: freeze_contract_before_reproduction}

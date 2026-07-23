@@ -29,6 +29,20 @@ def sha256_paths(paths: Iterable[Path], project_root: Path) -> str:
     return digest.hexdigest()
 
 
+def formal_source_paths(project_root: Path) -> list[Path]:
+    roots = ("scripts", "src", "reproducibility_audit", "b_class_auxiliary/tools")
+    paths = [path for root in roots for path in (project_root / root).rglob("*.py")]
+    paths.extend((project_root / "configs").rglob("*.yaml"))
+    paths.extend((project_root / "configs").rglob("*.yml"))
+    paths.extend((project_root / "b_class_auxiliary/coding_guards").rglob("*.yaml"))
+    paths.extend((project_root / "b_class_auxiliary/coding_guards").rglob("*.yml"))
+    return [path for path in paths if path.is_file() and "__pycache__" not in path.parts]
+
+
+def source_tree_sha256(project_root: Path) -> str:
+    return sha256_paths(formal_source_paths(project_root), project_root)
+
+
 def sha256_state_dict(state_dict: dict[str, Any]) -> str:
     digest = hashlib.sha256()
     for key in sorted(state_dict):
@@ -66,10 +80,7 @@ def collect_runtime_metadata(
                 f"{pretrained_weights_sha256!r} != {actual_pretrained_hash!r}"
             )
     git_commit = "unavailable"
-    source_tree_sha256 = sha256_paths(
-        [path for path in project_root.glob("src/**/*.py") if path.is_file()],
-        project_root,
-    )
+    computed_source_tree_sha256 = source_tree_sha256(project_root)
     try:
         git_commit = subprocess.run(
             ["git", "rev-parse", "HEAD"],
@@ -79,7 +90,7 @@ def collect_runtime_metadata(
             text=True,
         ).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
-        git_commit = f"source_tree_sha256:{source_tree_sha256}"
+        git_commit = f"source_tree_sha256:{computed_source_tree_sha256}"
 
     cuda_available = torch.cuda.is_available()
     metadata: dict[str, Any] = {
@@ -103,7 +114,7 @@ def collect_runtime_metadata(
         "cudnn_deterministic": torch.backends.cudnn.deterministic,
         "cudnn_benchmark": torch.backends.cudnn.benchmark,
         "git_commit": git_commit,
-        "source_tree_sha256": source_tree_sha256,
+        "source_tree_sha256": computed_source_tree_sha256,
         "frozen_source_config_sha256": sha256_paths(frozen_paths, project_root),
         "resnet34_pretrained_source": "local pretrained_weights_path" if pretrained_weights_path is not None else "not_applicable",
         "resnet34_pretrained_weight_path": pretrained_weights_path.resolve().relative_to(project_root).as_posix() if pretrained_weights_path is not None else "not_applicable",

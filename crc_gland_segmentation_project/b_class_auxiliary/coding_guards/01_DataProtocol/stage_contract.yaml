@@ -1,0 +1,16 @@
+parent_contract: b_class_auxiliary/coding_guards/reproducibility_contract.yaml
+stage: 01_DataProtocol
+dataset: glas
+model: data_protocol
+eval_proto_version: not_applicable
+runs: []
+splits: [train68, val17, TestA60, TestB20]
+sample_count: {train68: 68, val17: 17, TestA60: 60, TestB20: 20}
+metric_set: [data_config_hash, split_manifest_hash, asset_manifest_hash, dataset_files_hash]
+raw_schema: data_protocol_manifest
+aggregate_policy: no_aggregate
+lineage: {source_stage: 01_DataProtocol, source_manifest: reports/stage_reports/asset_manifest.json, source_protocol_version: 01_data_protocol_v1, source_run_name: data_protocol, consumer_stage: 02_UNetFlow, consumer_file: configs/data/glas.yaml, consumption_boundary: frozen_data_inputs}
+required_paths:
+  - {name: data_config, path: configs/data/glas.yaml}
+  - {name: parent_contract, path: b_class_auxiliary/coding_guards/reproducibility_contract.yaml}
+freshness: {current_round: data_protocol_v1, historical_exclusion: experiments, required_before_run: freeze_contract_before_reproduction}

@@ -1,0 +1,17 @@
+[runtime_check] stdout
+
+[runtime_check] stderr
+Traceback (most recent call last):
+  File "/home/featurize/work/Paper/crc_gland_segmentation_project/scripts/train.py", line 1127, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/featurize/work/Paper/crc_gland_segmentation_project/scripts/train.py", line 1117, in main
+    config_path, experiment_config = load_experiment_config(project_root, args.config)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/featurize/work/Paper/crc_gland_segmentation_project/scripts/train.py", line 132, in load_experiment_config
+    data = simple_yaml_load(config_path.read_text(encoding="utf-8"))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/featurize/work/Paper/crc_gland_segmentation_project/src/data/datasets.py", line 103, in simple_yaml_load
+    key, raw_value = raw_line.strip().split(":", 1)
+    ^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 2, got 1)

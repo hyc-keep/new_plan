@@ -96,21 +96,34 @@ def simple_yaml_load(text: str) -> dict[str, Any]:
     """
     root: dict[str, Any] = {}
     stack: list[tuple[int, dict[str, Any]]] = [(-1, root)]
+    last_scalar: tuple[dict[str, Any], str, int] | None = None
     for raw_line in text.splitlines():
         if not raw_line.strip() or raw_line.lstrip().startswith("#"):
             continue
         indent = len(raw_line) - len(raw_line.lstrip(" "))
-        key, raw_value = raw_line.strip().split(":", 1)
+        stripped = raw_line.strip()
+        if ":" not in stripped:
+            if last_scalar is None or indent <= last_scalar[2]:
+                raise ValueError(f"unsupported YAML continuation line: {raw_line!r}")
+            parent, key, _ = last_scalar
+            previous = parent[key]
+            if not isinstance(previous, str):
+                raise ValueError(f"YAML continuation requires a scalar string: {raw_line!r}")
+            parent[key] = f"{previous} {stripped}"
+            continue
+        key, raw_value = stripped.split(":", 1)
         value = _strip_inline_comment(raw_value.strip())
         while stack and indent <= stack[-1][0]:
             stack.pop()
         current = stack[-1][1]
         if value:
             current[key] = parse_scalar(value)
+            last_scalar = (current, key, indent)
         else:
             nested: dict[str, Any] = {}
             current[key] = nested
             stack.append((indent, nested))
+            last_scalar = None
     return root
 
 

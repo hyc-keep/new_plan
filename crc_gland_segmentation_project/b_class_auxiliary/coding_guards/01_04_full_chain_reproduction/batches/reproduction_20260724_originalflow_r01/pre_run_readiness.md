@@ -17,23 +17,21 @@
 | 输出隔离 | `scripts/train.py`/`scripts/test.py` 均支持 `experiment_root`；本轮输出固定于 `experiments/reproduction_20260724_originalflow_r01/<stage>/` | `pass` |
 | 新旧比较规则 | `result_comparison_contract.yaml` 已锁定历史真源、计划验收路径、字段和失败条件；历史数值不同不是隐含失败阈值 | `pass` |
 
-## 尚未运行的正式步骤
+## 已完成的 01 正式复现
 
-```text
-01：使用原 prepare_glas_split.py 写入本轮 01_data/splits，随后验证并比较新旧 split。
-02：仅在 01 数据验收通过后，运行 A1。
-03：仅在新 A1 完成后，运行三个 A2 seed。
-04：仅在新 A2 三 seed 完成后，运行三个 B1 seed 并做公平比较。
-```
+- 原 `prepare_glas_split.py` 已使用 seed 3407 向本轮独立 `01_data/splits/` 生成四份 split；
+- 四份新 split 与历史 CSV 逐行完全一致，行数为 68/17/60/20；165 个样本跨 split 无重复，330 个 image/mask 可读；
+- 本轮 `data_stage_acceptance.md` 的 `data_stage_pass=true`、`handoff_ready=true`、`preflight_pass=true`；
+- 本轮 `asset_manifest.json` 已登记隔离 data config，7 份本轮 A1/A2/B1 config 均显式引用该 manifest；
+- 01 preflight 的 `direct_preflight_payload.json` 证明训练入口实际使用本轮 data config、manifest、train split 和真实 image/mask 样本。该画像仅证明数据协议入口，不代表 A1 模型训练已完成。
 
 ## 当前裁决
 
 ```text
 pre_run_readiness: pass
-01_formal_reproduction: pending_not_run
-02_to_04_formal_reproduction: blocked_by_predecessor
-permission_to_start_formal_training: blocked
-next_allowed_action: run stage-01 split generation and data validation only
+01_formal_reproduction: pass
+02_runtime_and_smoke: allowed
+02_formal_training: blocked_until_runtime_and_smoke_pass
+03_to_04_formal_reproduction: blocked_by_predecessor
+next_allowed_action: prepare and run isolated A1 runtime, then A1 smoke
 ```
-
-原因：运行前静态准备已经成立，但正式复现必须从 01 的新 split 生成和数据验收开始。任何 A1/A2/B1 runtime、smoke、训练或测试都仍然不允许启动。

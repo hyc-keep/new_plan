@@ -20,6 +20,13 @@ source_objects:
       - splits/glas/glas_testB20.csv
     split_seed: 3407
     output_dir: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r01/01_data/splits
+    reproduction_status: pass
+    reproduction_evidence:
+      - b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r01/01_data/glas_split_report.md
+      - b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r01/01_data/data_stage_acceptance.md
+      - b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r01/01_data/asset_manifest.json
+      - b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r01/01_data/preflight/direct_preflight_payload.json
+    historical_split_comparison: identical_rows_all_four_splits
   stage02:
     source_config: configs/experiment/A1_UNet_GlaS_v1_seed3407.yaml
     source_config_sha256: da0529cd3d1aaaba9f5aba4ce77fe4b11c45bd655872206d0f41d1cdaf56de09

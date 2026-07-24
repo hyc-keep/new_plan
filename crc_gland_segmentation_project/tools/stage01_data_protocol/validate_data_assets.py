@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -84,6 +85,11 @@ def parse_args() -> argparse.Namespace:
         choices=("glas", "crag", "all"),
         default="all",
         help="Which frozen dataset config to validate.",
+    )
+    parser.add_argument(
+        "--data-config",
+        default=None,
+        help="Optional project-relative data config. Only valid with --dataset glas.",
     )
     parser.add_argument(
         "--output",
@@ -258,7 +264,11 @@ def load_csv_row_count(path: Path) -> int:
         return sum(1 for _ in csv.DictReader(handle))
 
 
-def validate_dataset(project_root: Path, dataset_code: str) -> tuple[str, list[str], dict[str, Any]]:
+def validate_dataset(
+    project_root: Path,
+    dataset_code: str,
+    data_config_relpath: str | None = None,
+) -> tuple[str, list[str], dict[str, Any]]:
     """Validate one frozen dataset config and its split asset availability.
 
     对应阶段: 01_数据协议
@@ -273,7 +283,7 @@ def validate_dataset(project_root: Path, dataset_code: str) -> tuple[str, list[s
     - 许可证: project_internal
     本项目调整: 对 GlaS / CRAG 统一输出 dataset role、dataset root、split row_count 和 pass/blocked 结论。
     """
-    config_path = project_root / "configs" / "data" / f"{dataset_code}.yaml"
+    config_path = project_root / (data_config_relpath or f"configs/data/{dataset_code}.yaml")
     config = load_data_config(project_root, config_path)
     dataset_root = resolve_dataset_root(project_root, config)
     details: list[str] = [
@@ -475,7 +485,10 @@ def inspect_label_assets(project_root: Path) -> dict[str, Any]:
     }
 
 
-def inspect_config_source_assets(project_root: Path) -> dict[str, Any]:
+def inspect_config_source_assets(
+    project_root: Path,
+    data_config_relpath: str | None = None,
+) -> dict[str, Any]:
     """Inspect frozen config files and dataset source notes for handoff readiness.
 
     对应阶段: 01_数据协议
@@ -493,7 +506,11 @@ def inspect_config_source_assets(project_root: Path) -> dict[str, Any]:
     entries: list[dict[str, Any]] = []
     missing_config: list[str] = []
     missing_source: list[str] = []
-    for relpath in CONFIG_ASSET_PATHS:
+    config_paths = [
+        data_config_relpath if relpath == "configs/data/glas.yaml" and data_config_relpath else relpath
+        for relpath in CONFIG_ASSET_PATHS
+    ]
+    for relpath in config_paths:
         path = project_root / relpath
         exists = path.exists()
         entries.append({"type": "config", "relative_path": relpath, "exists": exists})
@@ -520,6 +537,7 @@ def inspect_training_preflight(
     handoff_ready: bool,
     manifest_relpath: str,
     dataset_codes: tuple[str, ...],
+    data_config_relpath: str | None = None,
 ) -> dict[str, Any]:
     """Check whether the formal data-stage package can hand off to train-entry preflight.
 
@@ -556,22 +574,25 @@ def inspect_training_preflight(
             "preflight_pass": False,
         }
 
-    runtime_root = project_root / "reports" / "runtime_checks"
+    batch_root = Path(data_config_relpath).parent.parent if data_config_relpath else Path("reports/runtime_checks")
+    runtime_root = project_root / batch_root / "01_data" / "preflight"
     runtime_root.mkdir(parents=True, exist_ok=True)
-    probe_config_path = runtime_root / "_tmp_validate_data_assets_preflight.yaml"
-    probe_output_path = runtime_root / "_tmp_validate_data_assets_preflight.json"
-    probe_log_path = runtime_root / "_tmp_validate_data_assets_preflight.log"
+    probe_config_path = runtime_root / "data_stage_preflight_probe.yaml"
+    probe_output_path = runtime_root / "data_stage_preflight_payload.json"
+    probe_log_path = runtime_root / "data_stage_preflight.log"
     probe_config_relpath = safe_relpath(probe_config_path, project_root)
     probe_output_relpath = safe_relpath(probe_output_path, project_root)
+    probe_run_name = "data_stage_preflight_probe__runtime_probe"
 
     probe_config_lines = [
-        "run_name: data_stage_preflight_probe",
+        f"run_name: {probe_run_name}",
         "stage_code: 01_data_protocol_preflight",
         f"dataset_code: {dataset_code}",
         "model_code: train_entrypoint_preflight_only",
+        "train_seed: 3407",
         "runtime_split: train",
         "config_refs:",
-        f"  data: configs/data/{dataset_code}.yaml",
+        f"  data: {data_config_relpath or f'configs/data/{dataset_code}.yaml'}",
         f"  asset_manifest: {manifest_relpath}",
     ]
     probe_config_path.write_text("\n".join(probe_config_lines) + "\n", encoding="utf-8")
@@ -582,7 +603,7 @@ def inspect_training_preflight(
         "--config",
         probe_config_relpath,
         "--run-name",
-        "data_stage_preflight_probe",
+        probe_run_name,
         "--runtime-check",
         "--runtime-check-output",
         probe_output_relpath,
@@ -599,6 +620,11 @@ def inspect_training_preflight(
             text=True,
             timeout=120,
             check=False,
+            env={
+                **os.environ,
+                "PYTHONHASHSEED": "3407",
+                "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+            },
         )
         probe_log_path.write_text(
             "[preflight_probe] stdout\n"
@@ -628,11 +654,6 @@ def inspect_training_preflight(
     except subprocess.TimeoutExpired:
         blockers.append("preflight_probe_timeout")
         probe_log_path.write_text("[preflight_probe] timeout\n", encoding="utf-8")
-    finally:
-        for temp_path in (probe_config_path, probe_output_path, probe_log_path):
-            if temp_path.exists():
-                temp_path.unlink()
-
     return {
         "train_entrypoint": safe_relpath(train_entry, project_root),
         "train_entrypoint_exists": train_entry.exists(),
@@ -848,18 +869,21 @@ def main() -> int:
     args = parse_args()
     project_root = Path(args.project_root).resolve()
     dataset_codes = ("glas", "crag") if args.dataset == "all" else (args.dataset,)
+    if args.data_config and args.dataset != "glas":
+        raise SystemExit("--data-config requires --dataset glas")
 
     dataset_sections: list[tuple[str, str, list[str]]] = []
     dataset_results: dict[str, dict[str, Any]] = {}
     for dataset_code in dataset_codes:
-        status, details, payload = validate_dataset(project_root, dataset_code)
+        data_config_relpath = args.data_config if dataset_code == "glas" else None
+        status, details, payload = validate_dataset(project_root, dataset_code, data_config_relpath)
         dataset_sections.append((dataset_code, status, details))
         dataset_results[dataset_code] = payload
 
     check_info = inspect_check_assets(project_root)
     label_info = inspect_label_assets(project_root)
     preview_info = inspect_preview_assets(project_root)
-    config_source_info = inspect_config_source_assets(project_root)
+    config_source_info = inspect_config_source_assets(project_root, args.data_config)
 
     pass_split = all(payload["dataset_root_exists"] and all(item["exists"] for item in payload["split_assets"]) for payload in dataset_results.values())
     pass_source = config_source_info["pass_source"]
@@ -907,6 +931,7 @@ def main() -> int:
         handoff_ready,
         manifest_relpath,
         tuple(dataset_results.keys()),
+        args.data_config,
     )
     next_action = "enter_02_unet" if preflight_info["preflight_pass"] else "rollback"
 

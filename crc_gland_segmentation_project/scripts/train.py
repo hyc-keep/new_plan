@@ -299,6 +299,7 @@ def validate_formal_handoff(
     data_proto_version: str,
     dataset_code: str,
     split_name: str,
+    allow_preflight_pending: bool = False,
 ) -> dict[str, Any]:
     """
     对应阶段: 03_UNet稳定性
@@ -311,7 +312,8 @@ def validate_formal_handoff(
         blockers.append("data_stage_pass_false")
     if manifest.get("handoff_ready") is not True:
         blockers.append("handoff_ready_false")
-    if manifest.get("preflight_pass") is not True:
+    preflight_pass = manifest.get("preflight_pass") is True
+    if not preflight_pass and not allow_preflight_pending:
         blockers.append("preflight_pass_false")
 
     manifest_proto_version = str(manifest.get("data_protocol_package_version", "")).strip()
@@ -357,7 +359,8 @@ def validate_formal_handoff(
         "data_protocol_package_version": manifest_proto_version,
         "data_stage_pass": manifest.get("data_stage_pass") is True,
         "handoff_ready": manifest.get("handoff_ready") is True,
-        "preflight_pass": manifest.get("preflight_pass") is True,
+        "preflight_pass": preflight_pass,
+        "preflight_pending_allowed": allow_preflight_pending and not preflight_pass,
         "split_asset_exists": split_asset_exists,
         "data_config_registered": data_config_registered,
         "blockers": blockers,
@@ -475,6 +478,7 @@ def run_stage01_preflight(
         data_proto_version=data_config.data_proto_version,
         dataset_code=data_config.dataset_code,
         split_name=split_name,
+        allow_preflight_pending=(str(experiment_config.get("stage_code", "")) == "01_data_protocol_preflight"),
     )
     if handoff_check["blockers"]:
         raise RuntimeError("formal handoff gate blocked: " + ", ".join(handoff_check["blockers"]))

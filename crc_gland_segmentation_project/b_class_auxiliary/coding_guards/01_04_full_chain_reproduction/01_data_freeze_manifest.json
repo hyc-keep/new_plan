@@ -2,7 +2,7 @@
   "manifest_version": "01_data_freeze_manifest_v1",
   "status": "pre_run_only",
   "training_status": "pending_not_run",
-  "generated_at_utc": "2026-07-24T06:38:36.971577+00:00",
+  "generated_at_utc": "2026-07-24T06:51:58.706854+00:00",
   "project_root_policy": "project-root-relative paths only",
   "dataset": "glas",
   "data_protocol_package_version": "01_data_protocol_full_chain_freeze",

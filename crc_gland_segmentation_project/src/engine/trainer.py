@@ -312,9 +312,12 @@ def train_model(
 
             scaler.scale(loss_total).backward()
             scaler.unscale_(optimizer)
-            for parameter in model.parameters():
-                if parameter.grad is not None and not torch.isfinite(parameter.grad).all():
-                    raise FloatingPointError(f"non-finite gradient at epoch {epoch}, batch {batch_index}")
+            nonfinite_gradients = any(
+                parameter.grad is not None and not torch.isfinite(parameter.grad).all()
+                for parameter in model.parameters()
+            )
+            if nonfinite_gradients and not amp_enabled:
+                raise FloatingPointError(f"non-finite gradient at epoch {epoch}, batch {batch_index}")
             scaler.step(optimizer)
             scaler.update()
 

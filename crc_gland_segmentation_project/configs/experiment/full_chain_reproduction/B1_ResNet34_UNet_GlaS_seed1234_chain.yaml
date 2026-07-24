@@ -26,4 +26,6 @@ lineage:
   source_run_name: A2_UNet_GlaS_seed3407_chain,A2_UNet_GlaS_seed1234_chain,A2_UNet_GlaS_seed2025_chain
   consumer_stage: 04_Baseline
   consumer_file: configs/experiment/full_chain_reproduction/B1_ResNet34_UNet_GlaS_seed1234_chain.yaml
-  consumption_boundary: require the new chain A2 manifest; do not rerun A2 and exclude all historical A2/B1 assets
+  consumption_boundary: require the new chain A2 manifest; do not rerun A2 and exclude
+    all historical A2/B1 assets
+experiment_root: experiments/reproduction_20260724

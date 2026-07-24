@@ -117,11 +117,14 @@ def check_config(root: Path, config_rel: str, run: dict[str, Any], stage: str, e
         errors.append(f"config_missing:{config_rel}")
         return None
     config = load_yaml(path)
-    for field in ("run_name", "stage_code", "stage", "dataset_code", "model_name", "model_version", "config_version", "train_seed", "result_tag", "aggregation", "config_refs", "lineage"):
+    for field in ("run_name", "stage_code", "stage", "dataset_code", "model_name", "model_version", "config_version", "train_seed", "result_tag", "aggregation", "experiment_root", "config_refs", "lineage"):
         if field not in config:
             errors.append(f"config_field_missing:{config_rel}:{field}")
     if config.get("run_name") != run["run_name"] or int(config.get("train_seed", -1)) != int(run["seed"]):
         errors.append(f"config_identity_mismatch:{config_rel}")
+    batch_root = str(run["output_dir"]).rsplit("/", 1)[0]
+    if config.get("experiment_root") != batch_root:
+        errors.append(f"config_experiment_root_mismatch:{config_rel}")
     if config.get("stage") != stage or config.get("config_version") != "full_chain_reproduction_pending" or config.get("result_tag") != "full_chain_reproduction_pending":
         errors.append(f"config_pending_identity_mismatch:{config_rel}")
     refs = config.get("config_refs", {})
@@ -172,6 +175,12 @@ def main() -> int:
         if freeze.get("training_status") != "pending_not_run":
             errors.append("freeze_manifest_status_invalid")
 
+    batch_output_root = str(contract.get("batch_output_root", "")).strip()
+    if not batch_output_root.startswith("experiments/reproduction_") or Path(batch_output_root).is_absolute():
+        errors.append("batch_output_root_invalid")
+    elif (root / batch_output_root).exists():
+        errors.append(f"batch_output_root_must_not_exist:{batch_output_root}")
+
     all_runs: list[tuple[str, dict[str, Any]]] = []
     for section, expected_stage, expected_count in (("02_A1", "02_UNetFlow", 1), ("03_A2", "03_UNetStability", 3), ("04_B1", "04_Baseline", 3)):
         item = contract[section]
@@ -180,6 +189,9 @@ def main() -> int:
         require_lineage(item, section, errors)
         for run in item.get("runs", []):
             all_runs.append((expected_stage, run))
+            expected_output = f"{batch_output_root}/{run['run_name']}"
+            if run.get("output_dir") != expected_output:
+                errors.append(f"run_output_not_in_batch_root:{run['run_name']}")
             output = root / run["output_dir"]
             if output.exists():
                 errors.append(f"new_output_must_not_exist:{run['output_dir']}")
@@ -198,7 +210,7 @@ def main() -> int:
             errors.append(f"historical_exclusion_invalid:{pattern}")
 
     status = "pass" if not errors else "fail"
-    lines = ["# 01-04 Full Chain Pre-run Check Report", "", f"- status: `{status}`", "- scope: `pre-run only / pending_not_run`", f"- contract: `{CONTRACT_PATH.as_posix()}`", f"- freeze_manifest: `{FREEZE_PATH.as_posix()}`", f"- error_count: `{len(errors)}`", f"- warning_count: `{len(warnings)}`", "", "## Checked", "- seven new experiment configs: identity, seed, stage, pending version/tag, and config references", "- all seven new output directories: required to be absent", "- current four data hashes: actual files versus contract and generated freeze manifest", "- 02→03→04 seven-field lineage, 04 new-A2-manifest-only consumption, and no-rerun-A2 policy", "- historical run exclusions", "", "## Errors"]
+    lines = ["# 01-04 Full Chain Pre-run Check Report", "", f"- status: `{status}`", "- scope: `pre-run only / pending_not_run`", f"- contract: `{CONTRACT_PATH.as_posix()}`", f"- freeze_manifest: `{FREEZE_PATH.as_posix()}`", f"- error_count: `{len(errors)}`", f"- warning_count: `{len(warnings)}`", "", "## Checked", "- seven new experiment configs: identity, seed, stage, pending version/tag, and config references", "- one new batch root and all seven new output directories: required to be absent and confined to the contract batch root", "- current four data hashes: actual files versus contract and generated freeze manifest", "- 02→03→04 seven-field lineage, 04 new-A2-manifest-only consumption, and no-rerun-A2 policy", "- historical run exclusions", "", "## Errors"]
     lines.extend([f"- {item}" for item in errors] or ["- none"])
     lines.extend(["", "## Warnings"])
     lines.extend([f"- {item}" for item in warnings] or ["- none"])

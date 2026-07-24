@@ -107,7 +107,7 @@ def _relative_path(path: Path) -> str:
 
 def _resolve_run_dir(experiment_config: dict[str, Any], run_name_override: str | None) -> Path:
     run_name = run_name_override or str(experiment_config["run_name"])
-    return train_entry.build_output_dir(PROJECT_ROOT, run_name)
+    return train_entry.build_output_dir(PROJECT_ROOT, run_name, experiment_config.get("experiment_root"))
 
 
 def _resolve_checkpoint_path(run_dir: Path, checkpoint_override: str | None) -> Path:

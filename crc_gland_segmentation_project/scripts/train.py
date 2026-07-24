@@ -531,8 +531,14 @@ def load_training_configs(project_root: Path, experiment_config: dict[str, Any])
     }
 
 
-def build_output_dir(project_root: Path, run_name: str) -> Path:
-    return (project_root / "experiments" / run_name).resolve()
+def build_output_dir(project_root: Path, run_name: str, experiment_root: str | None = None) -> Path:
+    root_value = normalize_relpath(experiment_root or "experiments")
+    output_root = (project_root / root_value).resolve()
+    try:
+        output_root.relative_to(project_root.resolve())
+    except ValueError as exc:
+        raise ValueError(f"experiment_root must remain under the project root: {experiment_root!r}") from exc
+    return (output_root / run_name).resolve()
 
 
 def build_optimizer(
@@ -805,7 +811,7 @@ def run_stage02_training(
     train_run_name = args.run_name or (
         str(experiment_config["smoke_check_run_name"]) if smoke_check else str(experiment_config["run_name"])
     )
-    output_dir = project_root / "experiments" / train_run_name
+    output_dir = build_output_dir(project_root, train_run_name, experiment_config.get("experiment_root"))
     output_dir.mkdir(parents=True, exist_ok=True)
     lock_path = output_dir / ".run.lock"
     lock_handle = lock_path.open("a+", encoding="utf-8")
@@ -815,6 +821,12 @@ def run_stage02_training(
         lock_handle.close()
         raise RuntimeError(f"run is already active: {train_run_name}") from exc
     if not args.resume_from_last and any(output_dir.iterdir()):
+        experiment_root = normalize_relpath(str(experiment_config.get("experiment_root", "experiments")))
+        if experiment_root.startswith("experiments/reproduction_"):
+            raise FileExistsError(
+                f"immutable reproduction output already exists: {output_dir}; "
+                "preserve this evidence and create a new batch contract to retry"
+            )
         for child in output_dir.iterdir():
             if child.name != ".run.lock":
                 if child.is_dir():

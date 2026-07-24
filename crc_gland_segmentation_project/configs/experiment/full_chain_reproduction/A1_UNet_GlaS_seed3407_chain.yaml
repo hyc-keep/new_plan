@@ -25,4 +25,6 @@ lineage:
   source_run_name: 01_data_freeze
   consumer_stage: 02_UNetFlow
   consumer_file: configs/experiment/full_chain_reproduction/A1_UNet_GlaS_seed3407_chain.yaml
-  consumption_boundary: consume only the generated 01 freeze manifest; historical A1 assets excluded
+  consumption_boundary: consume only the generated 01 freeze manifest; historical
+    A1 assets excluded
+experiment_root: experiments/reproduction_20260724

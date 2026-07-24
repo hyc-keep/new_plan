@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import math
 import re
 from pathlib import Path
 import sys
@@ -34,8 +35,6 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
-
-from scripts import train as train_entry
 
 FORMAL_CONNECTIVITY = 8
 FORMAL_BOUNDARY_WIDTH = 3
@@ -659,7 +658,8 @@ def _read_run_meta(run_dir):
     meta_path = run_dir / "run_meta.yaml"
     if not meta_path.exists():
         return None
-    return train_entry.simple_yaml_load(meta_path.read_text(encoding="utf-8"))
+    data = yaml.safe_load(meta_path.read_text(encoding="utf-8"))
+    return data if isinstance(data, dict) else None
 
 
 def _validate_a2_run_identity(run_dir, meta, expected_run_name, expected_seed):
@@ -2439,7 +2439,88 @@ def write_baseline_stage_blockers(blockers: list[str]) -> Path:
     return output_path
 
 
+def _summarize_baseline_contract(contract_path: Path) -> int:
+    contract = yaml.safe_load(contract_path.read_text(encoding="utf-8"))
+    if not isinstance(contract, dict) or contract.get("stage") != "04_Baseline":
+        raise RuntimeError(f"invalid baseline stage contract: {contract_path}")
+    runs = contract.get("runs", [])
+    expected = {(stage, seed) for stage in ("A2", "B1") for seed in A2_SEEDS}
+    actual = {(str(item.get("run_name", "")).split("_", 1)[0], _parse_int(item.get("seed"))) for item in runs if isinstance(item, dict)}
+    if len(runs) != 6 or actual != expected:
+        raise RuntimeError(f"baseline contract must define the six A2/B1 runs, got {sorted(actual)}")
+    for key in ("config_version", "train_proto_version", "eval_proto_version"):
+        if not str(contract.get(key, "")).strip():
+            raise RuntimeError(f"baseline contract missing {key}")
+
+    per_seed: list[dict[str, Any]] = []
+    aggregate: dict[str, list[dict[str, Any]]] = {"A2": [], "B1": []}
+    b1_dirs: dict[int, Path] = {}
+    for item in runs:
+        run_name, seed, run_dir = str(item["run_name"]), _parse_int(item["seed"]), PROJECT_ROOT / str(item["output_dir"])
+        stage = run_name.split("_", 1)[0]
+        meta = _read_run_meta(run_dir)
+        if meta is None:
+            raise RuntimeError(f"contract run_meta missing: {run_dir}")
+        for field, expected_value in {"run_name": run_name, "train_seed": seed, "stage_code": stage, "config_version": contract["config_version"], "train_proto_version": contract["train_proto_version"], "eval_proto_version": contract["eval_proto_version"]}.items():
+            if str(meta.get(field)) != str(expected_value):
+                raise RuntimeError(f"contract/run_meta identity mismatch: {run_name}:{field}")
+        if stage == "B1":
+            b1_dirs[seed] = run_dir
+        for split, count in (("testA", 60), ("testB", 20)):
+            samples = [row for row in _load_csv_rows(run_dir / f"{split}_metrics.csv") if row.get("row_type") == "sample"]
+            if len(samples) != count:
+                raise RuntimeError(f"sample row count mismatch: {run_name}:{split} expected={count} actual={len(samples)}")
+            for field, expected_value in (("run_name", run_name), ("seed", seed), ("config_version", contract["config_version"]), ("eval_proto_version", contract["eval_proto_version"]), ("split_role", split)):
+                if any(str(row.get(field, "")) != str(expected_value) for row in samples):
+                    raise RuntimeError(f"sample identity mismatch: {run_name}:{split}:{field}")
+            for column in _MIN_METRIC_COLS:
+                values = [_parse_float(row.get(column)) for row in samples]
+                if any(value is None or not math.isfinite(value) for value in values):
+                    raise RuntimeError(f"invalid sample metric: {run_name}:{split}:{column}")
+                per_seed.append({"run_name": run_name, "stage": stage, "seed": seed, "split_role": split, "metric_name": _METRIC_COL_TO_NAME[column], "metric_value": sum(values) / len(values), "config_version": contract["config_version"], "train_proto_version": contract["train_proto_version"], "eval_proto_version": contract["eval_proto_version"], "aggregation": "single_seed_sample_mean"})
+    for stage in ("A2", "B1"):
+        for split, metric in _expected_compare_pairs():
+            values = [float(row["metric_value"]) for row in per_seed if row["stage"] == stage and row["split_role"] == split and row["metric_name"] == metric]
+            if len(values) != 3:
+                raise RuntimeError(f"incomplete aggregate: {stage}:{split}:{metric}")
+            mean = sum(values) / 3
+            aggregate[stage].append({"split_role": split, "metric_name": metric, "mean": mean, "std": math.sqrt(sum((value - mean) ** 2 for value in values) / 3), "n_runs": 3, "seeds": "3407,1234,2025", "config_version": contract["config_version"], "train_proto_version": contract["train_proto_version"], "eval_proto_version": contract["eval_proto_version"], "aggregation": "mean+-std_ddof0"})
+
+    tables = PROJECT_ROOT / "reports" / "tables"
+    def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+        with path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(rows[0]), lineterminator="\n")
+            writer.writeheader(); writer.writerows(rows)
+    write_csv(tables / "baseline_per_seed_summary.csv", per_seed)
+    write_csv(tables / "baseline_mean_std.csv", aggregate["B1"])
+    a2, b1 = _rows_by_split_metric(aggregate["A2"]), _rows_by_split_metric(aggregate["B1"])
+    comparison = [{"split_role": split, "metric_name": metric, "unet_mean": a2[(split, metric)]["mean"], "unet_std": a2[(split, metric)]["std"], "r34unet_mean": b1[(split, metric)]["mean"], "r34unet_std": b1[(split, metric)]["std"], "delta_mean_r34unet_minus_unet": b1[(split, metric)]["mean"] - a2[(split, metric)]["mean"], "config_version": contract["config_version"], "train_proto_version": contract["train_proto_version"], "eval_proto_version": contract["eval_proto_version"], "aggregation": "mean+-std_ddof0", "seeds": "3407,1234,2025", "n_runs": 3} for split, metric in _expected_compare_pairs()]
+    write_csv(tables / "unet_vs_r34unet_comparison.csv", comparison)
+    by_key = _rows_by_split_metric(comparison)
+    main_ok, main_failures = _evaluate_main_metric_direction(by_key)
+    stability_ok, stability_failures = _evaluate_stability(by_key)
+    stage_pass = len(b1_dirs) == 3 and main_ok and stability_ok
+    blockers = ([] if main_ok else [f"main_metrics_not_worse_failed reasons={main_failures}"]) + ([] if stability_ok else [f"stability_not_weaker_failed reasons={stability_failures}"])
+    summary = PROJECT_ROOT / "reports" / "stage_reports" / "baseline_stage_summary.md"
+    summary_lines = ["# Baseline Stage Summary (contract-derived v1 recovery)", "", "## Identity", f"- stage_contract: `{contract_path.relative_to(PROJECT_ROOT)}`", f"- config_version: `{contract['config_version']}`", f"- train_proto_version: `{contract['train_proto_version']}`", f"- eval_proto_version: `{contract['eval_proto_version']}`", "- source: `six contract runs; sample rows only; no legacy or v3 aggregate consumed`", "", "## Gate Status", "- complete_runs: `true`", f"- main_metrics_not_worse: `{str(main_ok).lower()}`", f"- stability_not_weaker: `{str(stability_ok).lower()}`", f"- gate_b1: `{str(stage_pass).lower()}`", f"- stage_pass_b1: `{str(stage_pass).lower()}`", f"- handoff_ready_for_c1: `{str(stage_pass).lower()}`", "", "## Blocking Reasons"]
+    summary_lines.extend([f"- {item}" for item in blockers] if blockers else ["- none"])
+    summary.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
+    manifest_rows = [{"asset_key": f"B1_run_{seed}_dir", "relative_path": _relative_path(path), "exists": True, "required_for_c1": True} for seed, path in sorted(b1_dirs.items())]
+    manifest_rows += [{"asset_key": key, "relative_path": _relative_path(path), "exists": True, "required_for_c1": True} for key, path in [("baseline_per_seed_summary", tables / "baseline_per_seed_summary.csv"), ("baseline_mean_std", tables / "baseline_mean_std.csv"), ("unet_vs_r34unet_comparison", tables / "unet_vs_r34unet_comparison.csv"), ("baseline_stage_summary", summary)]]
+    manifest_rows.append({"asset_key": "handoff_ready_for_c1", "relative_path": str(stage_pass).lower(), "exists": True, "required_for_c1": True})
+    write_csv(tables / "baseline_stage_manifest.csv", manifest_rows)
+    print(f"raw_table=reports/tables/baseline_per_seed_summary.csv rows={len(per_seed)}")
+    print(f"comparison_table=reports/tables/unet_vs_r34unet_comparison.csv rows={len(comparison)}")
+    print(f"stage_pass_b1={str(stage_pass).lower()}")
+    return 0
+
+
 def main_b1() -> int:
+    contract_arg = next((sys.argv[index + 1] for index, value in enumerate(sys.argv[:-1]) if value == "--stage-contract"), None)
+    return _summarize_baseline_contract((PROJECT_ROOT / contract_arg).resolve() if contract_arg else _CURRENT_STAGE_CONTRACT)
+
+
+def _legacy_main_b1() -> int:
     """
     对应阶段: 04_Baseline
     理论依据: 计划 04_阶段验收.md Gate_B1 全部子门章节；

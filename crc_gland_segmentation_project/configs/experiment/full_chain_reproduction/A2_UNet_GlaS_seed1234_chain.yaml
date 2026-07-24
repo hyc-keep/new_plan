@@ -1,0 +1,28 @@
+run_name: A2_UNet_GlaS_seed1234_chain
+stage_code: A2
+stage: 03_UNetStability
+dataset_code: glas
+model_code: unet_stability
+model_name: unet
+model_version: unet_v1
+config_version: full_chain_reproduction_pending
+train_proto_version: train_proto_v1
+train_seed: 1234
+result_tag: full_chain_reproduction_pending
+aggregation: three_seed_member
+runtime_split: train
+smoke_check_run_name: A2_UNet_GlaS_seed1234_chain__smoke
+config_refs:
+  data: configs/data/glas.yaml
+  model: configs/model/unet_v1.yaml
+  train: configs/train/unet_flow_v1.yaml
+  eval: configs/eval/eval_proto_v1.yaml
+  asset_manifest: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/01_data_freeze_manifest.json
+lineage:
+  source_stage: 02_UNetFlow
+  source_manifest: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/02_a1_manifest_pending.yaml
+  source_protocol_version: train_proto_v1/eval_proto_v1
+  source_run_name: A1_UNet_GlaS_seed3407_chain
+  consumer_stage: 03_UNetStability
+  consumer_file: configs/experiment/full_chain_reproduction/A2_UNet_GlaS_seed1234_chain.yaml
+  consumption_boundary: consume only the new chain A1 manifest; historical A1/A2 assets excluded

@@ -1,0 +1,29 @@
+run_name: B1_ResNet34_UNet_GlaS_seed2025_chain
+stage_code: B1
+stage: 04_Baseline
+dataset_code: glas
+model_code: resnet34_unet_baseline
+model_name: resnet34_unet
+model_version: r34_unet_v1
+config_version: full_chain_reproduction_pending
+train_proto_version: train_proto_v1
+train_seed: 2025
+result_tag: full_chain_reproduction_pending
+aggregation: three_seed_member
+runtime_split: train
+smoke_check_run_name: B1_ResNet34_UNet_GlaS_seed2025_chain__smoke
+config_refs:
+  data: configs/data/glas.yaml
+  model: configs/model/resnet34_unet.yaml
+  train: configs/train/unet_flow_v1.yaml
+  eval: configs/eval/eval_proto_v1.yaml
+  asset_manifest: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/01_data_freeze_manifest.json
+  source_a2_manifest: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/03_a2_manifest_pending.yaml
+lineage:
+  source_stage: 03_UNetStability
+  source_manifest: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/03_a2_manifest_pending.yaml
+  source_protocol_version: train_proto_v1/eval_proto_v1
+  source_run_name: A2_UNet_GlaS_seed3407_chain,A2_UNet_GlaS_seed1234_chain,A2_UNet_GlaS_seed2025_chain
+  consumer_stage: 04_Baseline
+  consumer_file: configs/experiment/full_chain_reproduction/B1_ResNet34_UNet_GlaS_seed2025_chain.yaml
+  consumption_boundary: require the new chain A2 manifest; do not rerun A2 and exclude all historical A2/B1 assets

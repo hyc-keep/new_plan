@@ -1,0 +1,86 @@
+contract_version: 01_04_full_chain_reproduction_contract_v1
+contract_status: pre_run_only
+training_status: pending_not_run
+full_chain_round_id: full_chain_reproduction_20260724
+round_id_policy: unique audit identifier only; it must not be inserted into formal run_name
+project_root_policy: all paths are project-root-relative POSIX paths; no machine-specific absolute path is allowed
+historical_assets:
+  policy: preserved_read_only_excluded
+  reason: 02 A1 checkpoint identity/hash lineage is not closed; 03 current A2 output is reused by 04 and aggregate conflicts with current sample CSV
+  excluded_patterns:
+    - experiments/A1_UNet_GlaS_v1_seed3407
+    - experiments/A2_UNet_GlaS_seed*
+    - experiments/B1_ResNet34_UNet_GlaS_seed*
+    - reports/tables/_historical_archive
+    - b_class_auxiliary/coding_guards/04_Baseline
+01_data_freeze:
+  status: pending_not_run
+  manifest: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/01_data_freeze_manifest.json
+  generated_by: b_class_auxiliary/tools/check_full_chain_reproduction_contract.py --write-data-freeze-manifest
+  data_config: configs/data/glas.yaml
+  split_files:
+    - splits/glas/glas_train68.csv
+    - splits/glas/glas_val17.csv
+    - splits/glas/glas_testA60.csv
+    - splits/glas/glas_testB20.csv
+  hash_algorithm: sha256
+  current_hashes:
+    data_config_sha256: 833b8628ad9135318f60b636931707eeaea761cd785df88f18c8b767d921d1bc
+    split_manifest_sha256: 77503f51331d3ae89b4640543ee28635e915a1c4fc1a46a38744007fbdd3eff7
+    asset_manifest_sha256: 320c7d1158e6a228ff14136bcc58133e14cd8f44d6a9e678e77eb848b9fa8f83
+    dataset_files_sha256: 13baa6646f8099d62736b8d823df7bdacef7cba57645999a0135d8f1d04e06ac
+  future_generation_requirements:
+    - generate the chain freeze manifest from actual data config, four split CSVs, source asset manifest, and all referenced image/mask files
+    - store only project-root-relative paths, row counts, content hashes, and generated_at_utc
+    - reject mismatch against current_hashes before any new run
+02_A1:
+  status: pending_not_run
+  stage: 02_UNetFlow
+  required_output_manifest: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/02_a1_manifest_pending.yaml
+  runs:
+    - run_name: A1_UNet_GlaS_seed3407_chain
+      seed: 3407
+      config: configs/experiment/full_chain_reproduction/A1_UNet_GlaS_seed3407_chain.yaml
+      output_dir: experiments/A1_UNet_GlaS_seed3407_chain
+  lineage:
+    source_stage: 01_DataProtocol
+    source_manifest: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/01_data_freeze_manifest.json
+    source_protocol_version: 01_data_protocol_full_chain_freeze
+    source_run_name: 01_data_freeze
+    consumer_stage: 02_UNetFlow
+    consumer_file: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/02_a1_manifest_pending.yaml
+    consumption_boundary: new 01 freeze only; historical A1 assets are excluded
+03_A2:
+  status: pending_not_run
+  stage: 03_UNetStability
+  required_output_manifest: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/03_a2_manifest_pending.yaml
+  runs:
+    - {run_name: A2_UNet_GlaS_seed3407_chain, seed: 3407, config: configs/experiment/full_chain_reproduction/A2_UNet_GlaS_seed3407_chain.yaml, output_dir: experiments/A2_UNet_GlaS_seed3407_chain}
+    - {run_name: A2_UNet_GlaS_seed1234_chain, seed: 1234, config: configs/experiment/full_chain_reproduction/A2_UNet_GlaS_seed1234_chain.yaml, output_dir: experiments/A2_UNet_GlaS_seed1234_chain}
+    - {run_name: A2_UNet_GlaS_seed2025_chain, seed: 2025, config: configs/experiment/full_chain_reproduction/A2_UNet_GlaS_seed2025_chain.yaml, output_dir: experiments/A2_UNet_GlaS_seed2025_chain}
+  lineage:
+    source_stage: 02_UNetFlow
+    source_manifest: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/02_a1_manifest_pending.yaml
+    source_protocol_version: train_proto_v1/eval_proto_v1
+    source_run_name: A1_UNet_GlaS_seed3407_chain
+    consumer_stage: 03_UNetStability
+    consumer_file: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/03_a2_manifest_pending.yaml
+    consumption_boundary: new chain A1 only; historical A1/A2 assets are excluded
+04_B1:
+  status: pending_not_run
+  stage: 04_Baseline
+  required_output_manifest: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/04_b1_manifest_pending.yaml
+  consumes_a2_once: true
+  forbid_rerun_a2: true
+  runs:
+    - {run_name: B1_ResNet34_UNet_GlaS_seed3407_chain, seed: 3407, config: configs/experiment/full_chain_reproduction/B1_ResNet34_UNet_GlaS_seed3407_chain.yaml, output_dir: experiments/B1_ResNet34_UNet_GlaS_seed3407_chain}
+    - {run_name: B1_ResNet34_UNet_GlaS_seed1234_chain, seed: 1234, config: configs/experiment/full_chain_reproduction/B1_ResNet34_UNet_GlaS_seed1234_chain.yaml, output_dir: experiments/B1_ResNet34_UNet_GlaS_seed1234_chain}
+    - {run_name: B1_ResNet34_UNet_GlaS_seed2025_chain, seed: 2025, config: configs/experiment/full_chain_reproduction/B1_ResNet34_UNet_GlaS_seed2025_chain.yaml, output_dir: experiments/B1_ResNet34_UNet_GlaS_seed2025_chain}
+  lineage:
+    source_stage: 03_UNetStability
+    source_manifest: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/03_a2_manifest_pending.yaml
+    source_protocol_version: train_proto_v1/eval_proto_v1
+    source_run_name: A2_UNet_GlaS_seed3407_chain,A2_UNet_GlaS_seed1234_chain,A2_UNet_GlaS_seed2025_chain
+    consumer_stage: 04_Baseline
+    consumer_file: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/04_b1_manifest_pending.yaml
+    consumption_boundary: consume the new A2 manifest exactly once; do not rerun A2; exclude all historical A2/B1 assets

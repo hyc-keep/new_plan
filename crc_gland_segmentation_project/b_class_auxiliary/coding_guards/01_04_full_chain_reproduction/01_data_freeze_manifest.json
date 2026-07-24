@@ -1,0 +1,58 @@
+{
+  "manifest_version": "01_data_freeze_manifest_v1",
+  "status": "pre_run_only",
+  "training_status": "pending_not_run",
+  "generated_at_utc": "2026-07-24T05:57:35.899323+00:00",
+  "project_root_policy": "project-root-relative paths only",
+  "dataset": "glas",
+  "data_protocol_package_version": "01_data_protocol_full_chain_freeze",
+  "data_stage_pass": true,
+  "handoff_ready": true,
+  "preflight_pass": true,
+  "config_source_assets": [
+    {
+      "type": "config",
+      "relative_path": "configs/data/glas.yaml",
+      "exists": true
+    }
+  ],
+  "split_assets": [
+    {
+      "dataset": "glas",
+      "split_name": "train",
+      "relative_path": "splits/glas/glas_train68.csv",
+      "row_count": 68,
+      "exists": true
+    },
+    {
+      "dataset": "glas",
+      "split_name": "val",
+      "relative_path": "splits/glas/glas_val17.csv",
+      "row_count": 17,
+      "exists": true
+    },
+    {
+      "dataset": "glas",
+      "split_name": "testA",
+      "relative_path": "splits/glas/glas_testA60.csv",
+      "row_count": 60,
+      "exists": true
+    },
+    {
+      "dataset": "glas",
+      "split_name": "testB",
+      "relative_path": "splits/glas/glas_testB20.csv",
+      "row_count": 20,
+      "exists": true
+    }
+  ],
+  "source_asset_manifest": "reports/stage_reports/asset_manifest.json",
+  "hashes": {
+    "data_config_sha256": "833b8628ad9135318f60b636931707eeaea761cd785df88f18c8b767d921d1bc",
+    "split_manifest_sha256": "77503f51331d3ae89b4640543ee28635e915a1c4fc1a46a38744007fbdd3eff7",
+    "asset_manifest_sha256": "320c7d1158e6a228ff14136bcc58133e14cd8f44d6a9e678e77eb848b9fa8f83",
+    "dataset_files_sha256": "13baa6646f8099d62736b8d823df7bdacef7cba57645999a0135d8f1d04e06ac"
+  },
+  "contract_round_id": "full_chain_reproduction_20260724",
+  "history_consumption": "excluded"
+}

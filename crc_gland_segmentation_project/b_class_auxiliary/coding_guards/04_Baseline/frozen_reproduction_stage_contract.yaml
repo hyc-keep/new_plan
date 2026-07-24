@@ -1,0 +1,39 @@
+parent_contract: b_class_auxiliary/coding_guards/reproducibility_contract.yaml
+stage: 04_Baseline
+dataset: glas
+model: paired_a2_unet_b1_resnet34_unet
+eval_proto_version: eval_proto_v1
+train_proto_version: train_proto_v1
+config_version: frozen_reproduction_pending
+historical_only: false
+future_round: frozen_reproduction_pending
+training_status: pending_not_run
+runs:
+  - {run_name: A2_UNet_GlaS_frozen_repro_seed3407, seed: 3407, config: configs/experiment/A2_UNet_GlaS_frozen_repro_seed3407.yaml, output_dir: experiments/A2_UNet_GlaS_frozen_repro_seed3407}
+  - {run_name: A2_UNet_GlaS_frozen_repro_seed1234, seed: 1234, config: configs/experiment/A2_UNet_GlaS_frozen_repro_seed1234.yaml, output_dir: experiments/A2_UNet_GlaS_frozen_repro_seed1234}
+  - {run_name: A2_UNet_GlaS_frozen_repro_seed2025, seed: 2025, config: configs/experiment/A2_UNet_GlaS_frozen_repro_seed2025.yaml, output_dir: experiments/A2_UNet_GlaS_frozen_repro_seed2025}
+  - {run_name: B1_ResNet34_UNet_GlaS_frozen_repro_seed3407, seed: 3407, config: configs/experiment/B1_ResNet34_UNet_GlaS_frozen_repro_seed3407.yaml, output_dir: experiments/B1_ResNet34_UNet_GlaS_frozen_repro_seed3407}
+  - {run_name: B1_ResNet34_UNet_GlaS_frozen_repro_seed1234, seed: 1234, config: configs/experiment/B1_ResNet34_UNet_GlaS_frozen_repro_seed1234.yaml, output_dir: experiments/B1_ResNet34_UNet_GlaS_frozen_repro_seed1234}
+  - {run_name: B1_ResNet34_UNet_GlaS_frozen_repro_seed2025, seed: 2025, config: configs/experiment/B1_ResNet34_UNet_GlaS_frozen_repro_seed2025.yaml, output_dir: experiments/B1_ResNet34_UNet_GlaS_frozen_repro_seed2025}
+splits: {train: 68, val: 17, testA: 60, testB: 20}
+sample_count: {raw_per_seed: 42, meanstd_rows: 14}
+metric_set: [dice, iou, objdice, objf1, hausdorff, hd95, boundary_f1]
+raw_schema: {semantic: sample_only, aggregate_rows_in_raw: false, required_fields: [stage, run_name, seed, split, sample_id, metric_name, metric_value]}
+aggregate_policy: {semantic: independent_derived_statistics, meanstd_rows: 14, ddof: 0, split_separation: [TestA, TestB]}
+lineage:
+  source_stage: 04_Baseline
+  source_manifest: reports/tables/baseline_stage_manifest.csv
+  source_protocol_version: train_proto_v1/eval_proto_v1
+  source_run_name: A2_UNet_GlaS_seed3407,A2_UNet_GlaS_seed1234,A2_UNet_GlaS_seed2025,B1_ResNet34_UNet_GlaS_seed3407,B1_ResNet34_UNet_GlaS_seed1234,B1_ResNet34_UNet_GlaS_seed2025
+  consumer_stage: 04_Baseline
+  consumer_file: b_class_auxiliary/coding_guards/04_Baseline/frozen_reproduction_stage_contract.yaml
+  consumption_boundary: historic v1 recovery is audit evidence only; this future six-run reproduction is pending and must not consume or claim historic metrics
+required_paths:
+  - {name: v1_recovery_contract, path: b_class_auxiliary/coding_guards/04_Baseline/stage_contract.yaml}
+  - {name: train_config, path: configs/train/unet_flow_v1.yaml}
+  - {name: eval_config, path: configs/eval/eval_proto_v1.yaml}
+freshness:
+  current_round: frozen_reproduction_pending
+  current_round_scope: future_only
+  historical_exclusion: experiments/A2_UNet_GlaS_seed*;experiments/B1_ResNet34_UNet_GlaS_seed*;reports/tables/_historical_archive
+  required_before_run: stage contract checker, isolated runtime and smoke must pass; formal training is pending and no metrics exist

@@ -1,0 +1,94 @@
+batch_id: reproduction_20260724_originalflow_r01
+purpose: >
+  Re-run the established 01-04 workflow from original data preparation through A1,
+  A2 three-seed stability, and B1 three-seed baseline comparison in isolated outputs.
+  This lock does not assert that any reproduction run has completed.
+status: pre_run_locked
+historical_results_role: historical_provenance_only
+current_result_role: pending_not_run
+source_code_commit: d608064dd0a813caa556a8b97c92e1256a518de8
+source_objects:
+  stage01:
+    data_config: configs/data/glas.yaml
+    data_config_sha256: 833b8628ad9135318f60b636931707eeaea761cd785df88f18c8b767d921d1bc
+    split_builder: tools/stage01_data_protocol/prepare_glas_split.py
+    asset_validator: tools/stage01_data_protocol/validate_data_assets.py
+    historical_splits:
+      - splits/glas/glas_train68.csv
+      - splits/glas/glas_val17.csv
+      - splits/glas/glas_testA60.csv
+      - splits/glas/glas_testB20.csv
+    split_seed: 3407
+    output_dir: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r01/01_data/splits
+  stage02:
+    source_config: configs/experiment/A1_UNet_GlaS_v1_seed3407.yaml
+    source_config_sha256: da0529cd3d1aaaba9f5aba4ce77fe4b11c45bd655872206d0f41d1cdaf56de09
+    reproduction_config: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r01/configs/A1_UNet_GlaS_repro_r01_seed3407.yaml
+    historical_run: experiments/A1_UNet_GlaS_v1_seed3407
+    historical_result_manifest: reports/tables/unet_flow_stage_manifest.csv
+    historical_summary: reports/stage_reports/unet_flow_stage_summary.md
+  stage03:
+    reconstruction_basis: >
+      Historical stage-03 runtime reports, implementation basis, delivery inventory and plan
+      consistently identify A2_UNet_GlaS_v1_seed*.yaml. Existing same-name A2 run snapshots
+      were later reused by stage 04 and are not used as stage-03 configuration evidence.
+    source_configs:
+      - path: configs/experiment/A2_UNet_GlaS_v1_seed3407.yaml
+        sha256: da452abf32eb0978606da3698fa7f321692bfa1596dafe4d98cc37871861d198
+      - path: configs/experiment/A2_UNet_GlaS_v1_seed1234.yaml
+        sha256: 5066423e763ab3614c840e197d1024a51f33ea4a8245c5d6337330ebf2fe6f6b
+      - path: configs/experiment/A2_UNet_GlaS_v1_seed2025.yaml
+        sha256: 33cb4377c35d42b4f078676bffc1a2f1289ae5d1877e633350f40e72f0d09a93
+    reproduction_configs:
+      - configs/A2_UNet_GlaS_repro_r01_seed3407.yaml
+      - configs/A2_UNet_GlaS_repro_r01_seed1234.yaml
+      - configs/A2_UNet_GlaS_repro_r01_seed2025.yaml
+    historical_result_sources:
+      - reports/tables/unet_seed_results.csv
+      - reports/tables/unet_mean_std_summary.csv
+      - reports/tables/unet_stage_manifest.csv
+      - reports/stage_reports/unet_stability_stage_summary.md
+    run_snapshot_limitation: existing experiments/A2_UNet_GlaS_seed*/config.yaml snapshots are excluded as stage-03 config evidence
+  stage04:
+    source_configs:
+      - path: configs/experiment/B1_ResNet34_UNet_GlaS_seed3407.yaml
+        sha256: 55c570e5c2629a53d08be8a21165169d4d7f4c4fff6cf43f1a22d62dc8707c83
+      - path: configs/experiment/B1_ResNet34_UNet_GlaS_seed1234.yaml
+        sha256: 0d21825e8407fcc54aa3e785fb1a58a2eef4ec5fc8fdc7128ba1a44491ba5619
+      - path: configs/experiment/B1_ResNet34_UNet_GlaS_seed2025.yaml
+        sha256: c09fddad45ee06ae86d087fba52d58be738bf57f8270dce3da16f682994a0b75
+    reproduction_configs:
+      - configs/B1_ResNet34_UNet_GlaS_repro_r01_seed3407.yaml
+      - configs/B1_ResNet34_UNet_GlaS_repro_r01_seed1234.yaml
+      - configs/B1_ResNet34_UNet_GlaS_repro_r01_seed2025.yaml
+    stage_contract: b_class_auxiliary/coding_guards/04_Baseline/stage_contract.yaml
+    historical_result_sources:
+      - reports/tables/baseline_per_seed_summary.csv
+      - reports/tables/baseline_mean_std.csv
+      - reports/tables/unet_vs_r34unet_comparison.csv
+      - reports/tables/baseline_stage_manifest.csv
+      - reports/stage_reports/baseline_stage_summary.md
+shared_protocol_sources:
+  train_config:
+    path: configs/train/unet_flow_v1.yaml
+    sha256: 53ef58fe1453a25da593e11e22323e232f9902cc3372821155712fafb685c284
+  eval_config:
+    path: configs/eval/eval_proto_v1.yaml
+    sha256: 6dad07b4eb45328c92004183974fc1e04f12f6020858389253d39082f50ce74d
+  unet_model_config:
+    path: configs/model/unet_v1.yaml
+    sha256: bf6cec8df8b116f037b2fe5c7d3ad3dfd61048224a4b98494740a46696c82324
+  resnet34_unet_model_config:
+    path: configs/model/resnet34_unet.yaml
+    sha256: e872a4dc22f5f1a2599b403078db18c9134c50bcb7cdcf47b4d59de9154c1eae
+output_roots:
+  experiments: experiments/reproduction_20260724_originalflow_r01
+  governance: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r01
+forbidden_inputs:
+  - experiments/reproduction_20260724
+  - experiments/A2_UNet_GlaS_seed*/config.yaml
+  - reports/tables/unet_seed_results.csv as current-stage input
+  - reports/tables/unet_mean_std_summary.csv as current-stage input
+  - reports/tables/baseline_mean_std.csv as current-stage input
+  - experiments/*__smoke
+  - experiments/*__runtime_probe

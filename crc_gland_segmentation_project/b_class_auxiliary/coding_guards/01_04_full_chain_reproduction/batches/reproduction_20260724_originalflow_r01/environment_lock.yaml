@@ -1,0 +1,37 @@
+batch_id: reproduction_20260724_originalflow_r01
+status: pre_run_environment_lock
+captured_before_formal_training: true
+source_code_commit: d608064dd0a813caa556a8b97c92e1256a518de8
+source_tree_sha256: 6d2aeb3434029a749445bea543a7a4ad17036f9154512ced28f2cacb392a89b7
+platform: Linux-5.15.0-105-generic-x86_64-with-glibc2.35
+python:
+  executable: /environment/miniconda3/bin/python
+  version: 3.11.8
+packages:
+  torch: 2.2.2+cu121
+  torchvision: 0.17.2
+  numpy: 1.26.4
+  scipy: 1.17.1
+  pillow: 10.3.0
+  pyyaml: 6.0.1
+cuda:
+  torch_runtime: "12.1"
+  cudnn_version: 8902
+  driver_version: 595.71.05
+  gpu_name: NVIDIA RTX A4000
+  gpu_uuid: GPU-92cf5f23-ba05-83a8-2299-88038549eed8
+  nvidia_smi_cuda_version: "13.2"
+launcher_required:
+  PYTHONHASHSEED: <must equal each run train_seed>
+  CUBLAS_WORKSPACE_CONFIG: :4096:8
+runtime_required_after_train_initialization:
+  deterministic_algorithms: true
+  cudnn_deterministic: true
+  cudnn_benchmark: false
+  dataloader_worker_seed: true
+  amp_grad_scaler: true
+verification_rule: >
+  The pre-training capture records the environment only. Each formal run must independently
+  record the launcher variables and deterministic fields in run_meta.yaml; a missing or false
+  required field blocks that run from aggregation.
+package_inventory_command: python -m pip freeze | sort

@@ -450,18 +450,31 @@ def collect_config_resolution(
     return {"config_refs": config_refs, "resolved": resolved, "missing": missing}, missing
 
 
+def choose_probe_run_name(
+    project_root: Path,
+    experiment_config: dict[str, Any],
+) -> str:
+    formal_run_name = str(experiment_config.get("run_name", "runtime_check"))
+    experiment_root = normalize_relpath(str(experiment_config.get("experiment_root", "experiments")))
+    output_root = (project_root / experiment_root).resolve()
+    base_name = formal_run_name + "__runtime_probe"
+    if not (output_root / base_name).exists():
+        return base_name
+    attempt = 2
+    while (output_root / f"{base_name}_attempt{attempt}").exists():
+        attempt += 1
+    return f"{base_name}_attempt{attempt}"
+
+
 def build_runtime_command(
     project_root: Path,
     experiment_config_rel: str,
-    run_name: str,
+    probe_run_name: str,
     train_runtime_output_path: Path,
     args: argparse.Namespace,
 ) -> list[str]:
-    # T-9: runtime check MUST use an isolated probe run_name, never the production
-    # run_name.  train.py unconditionally rmtrees the run_dir BEFORE the
-    # --runtime-check branch, so using the production run_name would silently
-    # destroy a fully-trained experiment directory.
-    probe_run_name = run_name + "__runtime_probe"
+    # T-9: runtime checks must use an isolated probe name, never the production
+    # run name. Each retry gets its own immutable attempt directory.
     return [
         sys.executable,
         str(project_root / "scripts" / "train.py"),
@@ -496,14 +509,14 @@ def run_formal_runtime_check(
         if not file_check.ready:
             blocking_reasons.append(f"{file_check.label}:{file_check.reason}")
 
+    probe_run_name = choose_probe_run_name(project_root, experiment_config)
     command = build_runtime_command(
         project_root,
         experiment_config_rel,
-        str(experiment_config.get("run_name", "runtime_check")),
+        probe_run_name,
         train_runtime_output_path,
         args,
     )
-    probe_run_name = str(experiment_config.get("run_name", "runtime_check")) + "__runtime_probe"
     record: dict[str, Any] = {
         "formal_run_name": experiment_config.get("run_name"),
         "probe_run_name": probe_run_name,

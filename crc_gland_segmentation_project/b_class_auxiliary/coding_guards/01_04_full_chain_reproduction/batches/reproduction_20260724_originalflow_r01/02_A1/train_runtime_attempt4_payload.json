@@ -1,0 +1,55 @@
+{
+  "run_name": "A1_UNet_GlaS_repro_r01_seed3407__runtime_probe_attempt4",
+  "mode": "runtime_check",
+  "device": "cuda",
+  "amp_requested": true,
+  "amp_active": true,
+  "grad_scaler_used": true,
+  "model_identity": {
+    "model_name": "unet",
+    "model_module": "src.models.unet",
+    "model_class": "UNet"
+  },
+  "max_steps": 1,
+  "steps_executed": 1,
+  "experiment_config": "b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r01/configs/A1_UNet_GlaS_repro_r01_seed3407.yaml",
+  "data_config": "b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r01/configs/glas_reproduction_r01.yaml",
+  "model_config": "configs/model/unet_v1.yaml",
+  "train_config": "configs/train/unet_flow_v1.yaml",
+  "eval_config": "configs/eval/eval_proto_v1.yaml",
+  "sample_id": "GlaS_official_train_train_65",
+  "sample_path": "datasets/01_GlaS_official_raw/train_65.bmp",
+  "mask_path": "datasets/01_GlaS_official_raw/train_65_anno.bmp",
+  "input_shape": [
+    2,
+    3,
+    512,
+    512
+  ],
+  "input_dtype": "float32",
+  "target_shape": [
+    2,
+    1,
+    512,
+    512
+  ],
+  "target_dtype": "float32",
+  "target_unique_values": [
+    0,
+    1
+  ],
+  "output_shape": [
+    2,
+    1,
+    512,
+    512
+  ],
+  "output_dtype": "float16",
+  "loss_value": 1.271256923675537,
+  "loss_is_finite": true,
+  "backward_executed": true,
+  "optimizer_step_executed": true,
+  "runtime_profile": "full_training_runtime",
+  "entrypoint_check_pass": true,
+  "entrypoint_check_reason": "formal_train_step_completed"
+}

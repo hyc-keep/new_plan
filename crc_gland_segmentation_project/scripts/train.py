@@ -816,6 +816,14 @@ def run_stage02_training(
         str(experiment_config["smoke_check_run_name"]) if smoke_check else str(experiment_config["run_name"])
     )
     output_dir = build_output_dir(project_root, train_run_name, experiment_config.get("experiment_root"))
+    output_preexists = output_dir.exists()
+    preexisting_children = tuple(output_dir.iterdir()) if output_preexists else ()
+    experiment_root = normalize_relpath(str(experiment_config.get("experiment_root", "experiments")))
+    if not args.resume_from_last and preexisting_children and experiment_root.startswith("experiments/reproduction_"):
+        raise FileExistsError(
+            f"immutable reproduction output already exists: {output_dir}; "
+            "preserve this evidence and create a new batch contract to retry"
+        )
     output_dir.mkdir(parents=True, exist_ok=True)
     lock_path = output_dir / ".run.lock"
     lock_handle = lock_path.open("a+", encoding="utf-8")
@@ -825,12 +833,6 @@ def run_stage02_training(
         lock_handle.close()
         raise RuntimeError(f"run is already active: {train_run_name}") from exc
     if not args.resume_from_last and any(output_dir.iterdir()):
-        experiment_root = normalize_relpath(str(experiment_config.get("experiment_root", "experiments")))
-        if experiment_root.startswith("experiments/reproduction_"):
-            raise FileExistsError(
-                f"immutable reproduction output already exists: {output_dir}; "
-                "preserve this evidence and create a new batch contract to retry"
-            )
         for child in output_dir.iterdir():
             if child.name != ".run.lock":
                 if child.is_dir():
@@ -920,8 +922,9 @@ def run_stage02_training(
         formal_run_name = str(experiment_config.get("run_name", ""))
         if not args.run_name or args.run_name == formal_run_name:
             raise ValueError("runtime-check requires an isolated probe run_name, not the formal run_name")
-        if not args.run_name.endswith("__runtime_probe"):
-            raise ValueError("runtime-check run_name must end with '__runtime_probe'")
+        probe_base = formal_run_name + "__runtime_probe"
+        if args.run_name != probe_base and not re.fullmatch(re.escape(probe_base) + r"_attempt\d+", args.run_name):
+            raise ValueError("runtime-check run_name must be an isolated '__runtime_probe' attempt")
         return run_stage02_runtime_check(
             args=args,
             project_root=project_root,

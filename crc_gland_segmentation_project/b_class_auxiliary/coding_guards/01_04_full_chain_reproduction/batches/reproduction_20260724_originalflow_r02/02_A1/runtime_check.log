@@ -1,0 +1,16 @@
+[runtime_check] stdout
+preflight_output_dir=experiments/reproduction_20260724_originalflow_r02/02_A1/A1_UNet_GlaS_repro_r02_seed3407__runtime_probe
+preflight=loading_asset_manifest
+preflight=validating_train_handoff
+preflight=train_handoff_done
+preflight=validating_val_handoff
+preflight=handoff_pass
+preflight=model_ready
+run_name=A1_UNet_GlaS_repro_r02_seed3407__runtime_probe
+device=cuda
+runtime_check_output=b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r02/02_A1/train_runtime_payload.json
+steps_executed=1
+sample_id=GlaS_official_train_train_65
+loss_value=1.271257
+
+[runtime_check] stderr

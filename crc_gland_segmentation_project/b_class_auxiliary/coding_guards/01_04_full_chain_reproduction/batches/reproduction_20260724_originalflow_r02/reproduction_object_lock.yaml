@@ -1,0 +1,47 @@
+batch_id: reproduction_20260724_originalflow_r02
+status: pre_run_locked
+purpose: >
+  Restart the complete original 01-04 workflow in a fresh batch after r01 A1
+  formal training stopped at a recoverable AMP overflow control-flow defect.
+  No r01 split, manifest, runtime, smoke, checkpoint, metric, or summary asset
+  is consumed as a current r02 result.
+r01_predecessor:
+  batch_id: reproduction_20260724_originalflow_r01
+  status: failed_at_stage02_formal_training
+  preserved_as: read_only_failure_evidence
+  failure: >
+    A1 stopped at epoch 3 batch 21 because the old trainer raised before
+    GradScaler could skip an AMP overflow step. Images, targets and loss were finite.
+  fix_commit: e95656e2e8ab7a04c9f1e0cb3f7ca04b604ed878
+source_code_commit: e95656e2e8ab7a04c9f1e0cb3f7ca04b604ed878
+historical_results_role: historical_provenance_only
+current_result_role: pending_not_run
+stage01:
+  source_data_config: configs/data/glas.yaml
+  split_builder: tools/stage01_data_protocol/prepare_glas_split.py
+  asset_validator: tools/stage01_data_protocol/validate_data_assets.py
+  split_seed: 3407
+  output_dir: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r02/01_data/splits
+stage02:
+  source_config: configs/experiment/A1_UNet_GlaS_v1_seed3407.yaml
+  reproduction_config: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r02/configs/A1_UNet_GlaS_repro_r02_seed3407.yaml
+stage03:
+  reconstruction_basis: A2_UNet_GlaS_v1_seed_configs_supported_by_stage03_runtime_implementation_and_delivery_evidence
+  reproduction_configs:
+    - configs/A2_UNet_GlaS_repro_r02_seed3407.yaml
+    - configs/A2_UNet_GlaS_repro_r02_seed1234.yaml
+    - configs/A2_UNet_GlaS_repro_r02_seed2025.yaml
+stage04:
+  reproduction_configs:
+    - configs/B1_ResNet34_UNet_GlaS_repro_r02_seed3407.yaml
+    - configs/B1_ResNet34_UNet_GlaS_repro_r02_seed1234.yaml
+    - configs/B1_ResNet34_UNet_GlaS_repro_r02_seed2025.yaml
+  source_contract: b_class_auxiliary/coding_guards/04_Baseline/stage_contract.yaml
+output_roots:
+  experiments: experiments/reproduction_20260724_originalflow_r02
+  governance: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r02
+forbidden_inputs:
+  - experiments/reproduction_20260724_originalflow_r01
+  - b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r01/01_data
+  - experiments/*__smoke
+  - experiments/*__runtime_probe

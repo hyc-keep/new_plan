@@ -1,0 +1,35 @@
+batch_id: reproduction_20260724_originalflow_r02
+status: pre_formal_training_lock
+source_code_commit: e95656ea6284a7c6d9ccf580891e48154046ea9b
+amp_overflow_fix: >
+  AMP non-finite gradients are handled by GradScaler.step()/update(); non-AMP
+  non-finite gradients remain fatal. The r01 failure evidence established this
+  is required for the original A1 path on the locked GPU environment.
+platform: Linux-5.15.0-105-generic-x86_64-with-glibc2.35
+python:
+  executable: /environment/miniconda3/bin/python
+  version: 3.11.8
+packages:
+  torch: 2.2.2+cu121
+  torchvision: 0.17.2
+  numpy: 1.26.4
+  scipy: 1.17.1
+  pillow: 10.3.0
+  pyyaml: 6.0.1
+cuda:
+  torch_runtime: "12.1"
+  cudnn_version: 8902
+  driver_version: 595.71.05
+  gpu_name: NVIDIA RTX A4000
+launcher_required:
+  PYTHONHASHSEED: <must equal each run train_seed>
+  CUBLAS_WORKSPACE_CONFIG: :4096:8
+runtime_required_after_train_initialization:
+  deterministic_algorithms: true
+  cudnn_deterministic: true
+  cudnn_benchmark: false
+  dataloader_worker_seed: true
+  amp_grad_scaler: true
+verification_rule: >
+  Every formal run must independently record launcher variables and deterministic
+  fields in run_meta.yaml. Missing or false required fields block aggregation.

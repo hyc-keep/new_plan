@@ -1,0 +1,16 @@
+run_name: A2_UNet_GlaS_repro_r02_seed1234
+stage_code: A2
+dataset_code: glas
+model_name: unet
+config_version: reproduction_r02_from_A2_UNet_GlaS_v1
+train_seed: 1234
+result_tag: reproduction_r02_pending
+aggregation: single_seed
+smoke_check_run_name: A2_UNet_GlaS_repro_r02_seed1234__smoke
+experiment_root: experiments/reproduction_20260724_originalflow_r02/03_A2
+config_refs:
+  asset_manifest: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r02/01_data/asset_manifest.json
+  data: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r02/configs/glas_reproduction_r02.yaml
+  model: configs/model/unet_v1.yaml
+  train: configs/train/unet_flow_v1.yaml
+  eval: configs/eval/eval_proto_v1.yaml

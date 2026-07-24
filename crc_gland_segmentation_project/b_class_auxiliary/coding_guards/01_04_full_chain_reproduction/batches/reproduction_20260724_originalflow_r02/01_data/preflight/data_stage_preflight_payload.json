@@ -1,0 +1,49 @@
+{
+  "run_name": "data_stage_preflight_probe__runtime_probe",
+  "mode": "runtime_check",
+  "device": "cpu",
+  "max_steps": 1,
+  "experiment_config": "b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r02/01_data/preflight/data_stage_preflight_probe.yaml",
+  "data_config": "b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r02/configs/glas_reproduction_r02.yaml",
+  "asset_manifest": "b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r02/01_data/asset_manifest.json",
+  "asset_manifest_version": "asset_manifest_v1",
+  "data_protocol_package_version": "01_data_protocol_v1",
+  "data_stage_pass": true,
+  "handoff_ready": true,
+  "preflight_pass": false,
+  "split_asset_exists": true,
+  "data_config_registered": true,
+  "sample_id": "GlaS_official_train_train_1",
+  "sample_path": "datasets/01_GlaS_official_raw/train_1.bmp",
+  "mask_path": "datasets/01_GlaS_official_raw/train_1_anno.bmp",
+  "input_shape": [
+    522,
+    775,
+    3
+  ],
+  "input_dtype": "uint8",
+  "target_shape": [
+    522,
+    775
+  ],
+  "target_dtype": "uint8",
+  "target_unique_values": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7"
+  ],
+  "output_shape": null,
+  "output_dtype": null,
+  "loss_value": null,
+  "loss_is_finite": null,
+  "backward_executed": null,
+  "optimizer_step_executed": null,
+  "runtime_profile": "data_protocol_preflight",
+  "entrypoint_check_pass": true,
+  "entrypoint_check_reason": "formal_split_assets_and_handoff_gates_resolved"
+}

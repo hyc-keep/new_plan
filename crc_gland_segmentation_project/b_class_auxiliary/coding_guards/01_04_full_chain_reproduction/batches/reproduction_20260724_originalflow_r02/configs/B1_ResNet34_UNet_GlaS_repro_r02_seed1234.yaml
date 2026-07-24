@@ -1,0 +1,19 @@
+run_name: B1_ResNet34_UNet_GlaS_repro_r02_seed1234
+stage_code: B1
+stage: 04_Baseline
+dataset_code: glas
+model_name: resnet34_unet
+model_version: r34_unet_v1
+config_version: reproduction_r02_from_B1_original_protocol_reproduction
+train_proto_version: train_proto_v1
+train_seed: 1234
+result_tag: reproduction_r02_pending
+aggregation: single_seed
+smoke_check_run_name: B1_ResNet34_UNet_GlaS_repro_r02_seed1234__smoke
+experiment_root: experiments/reproduction_20260724_originalflow_r02/04_B1
+config_refs:
+  asset_manifest: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r02/01_data/asset_manifest.json
+  data: b_class_auxiliary/coding_guards/01_04_full_chain_reproduction/batches/reproduction_20260724_originalflow_r02/configs/glas_reproduction_r02.yaml
+  model: configs/model/resnet34_unet.yaml
+  train: configs/train/unet_flow_v1.yaml
+  eval: configs/eval/eval_proto_v1.yaml

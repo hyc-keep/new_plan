@@ -1,0 +1,82 @@
+batch_id: reproduction_20260724_originalflow_r02
+status: pre_run_comparison_lock
+rule: >
+  Historical results are comparison provenance. A new result passes if the locked original plan
+  acceptance and the new complete evidence chain pass. Numerical differences must be reported,
+  investigated for protocol drift, and do not independently fail a plan-compliant reproduction.
+comparison_columns:
+  - stage
+  - run_name
+  - seed
+  - split
+  - metric_name
+  - historical_value
+  - reproduction_value
+  - absolute_delta
+  - relative_delta
+  - plan_requirement_source
+  - plan_requirement_status
+  - protocol_identity_status
+  - comparison_status
+stage01:
+  historical_sources:
+    - splits/glas/glas_train68.csv
+    - splits/glas/glas_val17.csv
+    - splits/glas/glas_testA60.csv
+    - splits/glas/glas_testB20.csv
+    - reports/stage_reports/asset_manifest.json
+  required_comparisons:
+    - sample membership per split
+    - row counts 68/17/60/20
+    - cross-split uniqueness
+    - image-mask path readability
+  plan_requirement_source: 结直肠腺体分割_plan_优化版/01_实验执行/01_数据协议/07_数据阶段验收.md
+stage02:
+  historical_sources:
+    - experiments/A1_UNet_GlaS_v1_seed3407/testA_metrics.csv
+    - experiments/A1_UNet_GlaS_v1_seed3407/testB_metrics.csv
+    - reports/tables/unet_flow_stage_manifest.csv
+    - reports/stage_reports/unet_flow_stage_summary.md
+  required_comparisons:
+    - TestA/TestB sample counts
+    - seven metric sample rows
+    - checkpoint identity
+    - independent metric crosscheck
+  plan_requirement_source: 结直肠腺体分割_plan_优化版/01_实验执行/02_UNet流程验证/05_阶段验收.md
+stage03:
+  historical_sources:
+    - reports/tables/unet_seed_results.csv
+    - reports/tables/unet_mean_std_summary.csv
+    - reports/tables/unet_stage_manifest.csv
+    - reports/stage_reports/unet_stability_stage_summary.md
+  required_comparisons:
+    - seeds 3407/1234/2025 each complete
+    - TestA/TestB sample-only rows
+    - seven metric mean and population standard deviation ddof=0
+    - stage03 reconstruction-basis identity
+  plan_requirement_source: 结直肠腺体分割_plan_优化版/01_实验执行/03_UNet稳定性/03_阶段验收.md
+stage04:
+  historical_sources:
+    - reports/tables/baseline_per_seed_summary.csv
+    - reports/tables/baseline_mean_std.csv
+    - reports/tables/unet_vs_r34unet_comparison.csv
+    - reports/tables/baseline_stage_manifest.csv
+    - reports/stage_reports/baseline_stage_summary.md
+  required_comparisons:
+    - seeds 3407/1234/2025 each complete
+    - TestA/TestB sample-only rows
+    - seven metric mean and population standard deviation ddof=0
+    - A2-B1 paired protocol identity
+    - fair baseline comparison
+  plan_requirement_source: 结直肠腺体分割_plan_优化版/01_实验执行/04_Baseline/04_阶段验收.md
+numerical_delta_policy:
+  historical_exact_match_required: false
+  hidden_acceptance_threshold: none
+  required_investigation_when_nonzero: true
+  fail_conditions:
+    - protocol_identity_mismatch
+    - sample_count_mismatch
+    - missing_seed
+    - evaluation_schema_mismatch
+    - plan_requirement_fail
+    - independent_crosscheck_fail
